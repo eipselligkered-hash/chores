@@ -80,3 +80,5 @@ details.room .item { min-height: 56px; }
 .item.ticked .name { text-decoration: line-through; color: var(--muted); }
 .hint { font-size: 13px; color: var(--muted); margin: 6px 4px 0; }
 .toast[hidden] { display: none; }
+
+.chip.s-Done { background: var(--brand); color: #fff; }

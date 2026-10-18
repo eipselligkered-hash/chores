@@ -1,5 +1,5 @@
-import { computeAll, thisWeekend, weekEndFor, fmtDate, addDays, toDay } from './schedule.js?v=5';
-import { makeBackend } from './data.js?v=5';
+import { computeAll, thisWeekend, weekEndFor, fmtDate, addDays, toDay } from './schedule.js?v=6';
+import { makeBackend } from './data.js?v=6';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -9,7 +9,7 @@ const localToday = () => params.get('today') || new Date().toLocaleDateString('e
 const CU_START = '2026-10-23', CU_END = '2026-10-27';
 
 const be = makeBackend();
-const state = { openRooms: new Set(), group: localStorage.getItem('chores.group') || 'room', tab: params.get('tab') || 'weekend', next: params.get('week') === 'next', q: '', db: null, lastUndo: null };
+const state = { openRooms: new Set(), group: localStorage.getItem('chores.group') || 'room', filter: localStorage.getItem('chores.filter') || 'all', tab: params.get('tab') || 'weekend', next: params.get('week') === 'next', q: '', db: null, lastUndo: null };
 
 async function refresh() { state.db = await be.load(); render(); }
 const cap = () => state.db.settings?.cap_min || window.CHORES_CONFIG?.cap || 300;
@@ -89,26 +89,32 @@ function renderAll() {
   const rows = computeAll(db.tasks, db.completions, today).sort((a, b) => a.task.sort_key - b.task.sort_key);
   const q = state.q.trim().toLowerCase();
   const counts = {}; rows.forEach((r) => (counts[r.status] = (counts[r.status] || 0) + 1));
+  const mon = addDays(weekEndFor(today), -6);
+  const isTodo = (r) => ['Overdue', 'Due today', 'Due by Sunday'].includes(r.status);
+  const isDone = (r) => r.last_effective && r.last_effective >= mon && r.last_effective <= today;
+  const F = state.filter, nTodo = rows.filter(isTodo).length, nDone = rows.filter(isDone).length;
+  const passF = (r) => (F === 'todo' ? isTodo(r) : F === 'done' ? isDone(r) : true);
   const G = state.group, PRIO = ['Safety', 'Hygiene', 'Nice-to-have'];
   const keyOf = (r) => (G === 'priority' ? (r.task.priority || 'No priority') : r.task.room);
   const rooms = new Map();
   if (G === 'priority') for (const k of PRIO) rooms.set(k, []);
   const list = G === 'priority' ? rows.slice().sort((a, b) => (a.next_due || '9999').localeCompare(b.next_due || '9999') || a.task.sort_key - b.task.sort_key) : rows;
-  for (const r of list) { if (q && !(`${r.task.room} ${r.task.name} ${r.task.priority}`.toLowerCase().includes(q))) continue; const k = keyOf(r); if (!rooms.has(k)) rooms.set(k, []); rooms.get(k).push(r); }
+  for (const r of list) { if (!passF(r)) continue; if (q && !(`${r.task.room} ${r.task.name} ${r.task.priority}`.toLowerCase().includes(q))) continue; const k = keyOf(r); if (!rooms.has(k)) rooms.set(k, []); rooms.get(k).push(r); }
   for (const [k, v] of rooms) if (!v.length) rooms.delete(k);
   let h = `<input class="search" type="search" placeholder="Search ${rows.length} tasks…" value="${esc(state.q)}" id="q" autocomplete="off">
     <div class="seg"><button data-group="room" class="${G === 'room' ? 'on' : ''}">By room</button><button data-group="priority" class="${G === 'priority' ? 'on' : ''}">By priority</button></div>
+    <div class="seg"><button data-filter="all" class="${F === 'all' ? 'on' : ''}">All</button><button data-filter="todo" class="${F === 'todo' ? 'on' : ''}">To do (${nTodo})</button><button data-filter="done" class="${F === 'done' ? 'on' : ''}">Done (${nDone})</button></div>
     <div class="summary">${['Overdue', 'Due today', 'Due by Sunday', 'OK', 'Paused (winter)', 'Daily habit', 'No date'].filter((s) => counts[s]).map((s) => `<span class="chip s-${cls(s)}">${counts[s]} ${s}</span>`).join('')}</div>`;
   for (const [room, rs] of rooms) {
     const od = rs.filter((r) => r.status === 'Overdue').length, due = rs.filter((r) => r.status.startsWith('Due')).length;
-    h += `<details class="room" data-room="${esc(G + ':' + room)}" ${q || od || due || state.openRooms.has(G + ':' + room) ? 'open' : ''}><summary><span>${esc(room)} <small class="muted">(${rs.length})</small></span><span class="counts">${od ? `<span class="chip s-Overdue">${od} overdue</span>` : ''}${due ? `<span class="chip s-Due-today">${due} due</span>` : ''}</span></summary>
+    h += `<details class="room" data-room="${esc(G + ':' + room)}" ${q || F !== 'all' || od || due || state.openRooms.has(G + ':' + room) ? 'open' : ''}><summary><span>${esc(room)} <small class="muted">(${rs.length})</small></span><span class="counts">${od ? `<span class="chip s-Overdue">${od} overdue</span>` : ''}${due ? `<span class="chip s-Due-today">${due} due</span>` : ''}</span></summary>
       ${rs.map((r) => `<div class="item ${r.task.priority === 'Safety' ? 'safety' : ''}" data-id="${r.task.id}">
-        <button class="tick" data-act="done" aria-label="Mark ${esc(r.task.name)} done today">✓</button><div class="body"><div class="name">${esc(r.task.name)}</div>
+        <button class="tick ${isDone(r) ? 'done' : ''}" data-act="done" aria-label="Mark ${esc(r.task.name)} done today">✓</button><div class="body"><div class="name">${esc(r.task.name)}</div>
         <div class="meta">${G === 'priority' ? `<span>${esc(r.task.room)}</span>` : ''}<span>${esc(r.task.frequency)}</span>${r.task.effort_min ? `<span>⏱ ${r.task.effort_min} min</span>` : ''}${G === 'priority' ? '' : prioChip(r.task.priority)}${r.task.season ? `<span>🍂 ${esc(r.task.season)}</span>` : ''}</div></div>
-        <div class="due">${statusChip(r.status)}<div class="muted">${r.task.frequency === 'Daily' ? 'every day' : fmtDate(r.next_due)}</div></div>
+        <div class="due">${isDone(r) ? '<span class="chip s-Done">Done ✓</span>' : statusChip(r.status)}<div class="muted">${F === 'done' ? `done ${fmtDate(r.last_effective)}` : r.task.frequency === 'Daily' ? 'every day' : fmtDate(r.next_due)}</div></div>
         <button class="more" data-act="date" aria-label="Done on another date">⋯</button></div>`).join('')}</details>`;
   }
-  if (!rooms.size) h += `<div class="empty">No tasks match “${esc(state.q)}”.</div>`;
+  if (!rooms.size) h += `<div class="card empty">${q ? `No tasks match “${esc(state.q)}”.` : F === 'todo' ? 'Nothing to do by Sunday 🎉' : F === 'done' ? 'Nothing ticked off yet this week.' : 'No tasks.'}</div>`;
   return h + `<p class="hint">Tap ✓ to mark done today, or ⋯ (long-press) to pick another date. To add or change a task, ask the assistant.</p>`;
 }
 
@@ -143,7 +149,7 @@ async function toggleCatchup(id) {
 
 function render() {
   const today = localToday();
-  $('#today').textContent = fmtDate(today, { long: true }) + ' · v5' + (be.kind === 'mock' ? ' · local mock' : '');
+  $('#today').textContent = fmtDate(today, { long: true }) + ' · v6' + (be.kind === 'mock' ? ' · local mock' : '');
   $('#account').textContent = be.kind === 'mock' ? 'Mock data' : (be.user?.email || '');
   document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === state.tab));
   $('#tab-catchup').hidden = !state.db.catchup.length || today > addDays(CU_END, 14);
@@ -172,6 +178,7 @@ view.addEventListener('contextmenu', (e) => { if (e.target.closest('.item[data-i
 view.addEventListener('click', async (e) => {
   const b = e.target.closest('button'); if (!b) return;
   if (longPressed) { longPressed = false; return; }
+  if (b.dataset.filter) { state.filter = b.dataset.filter; localStorage.setItem('chores.filter', state.filter); return render(); }
   if (b.dataset.group) { state.group = b.dataset.group; localStorage.setItem('chores.group', state.group); return render(); }
   if (b.dataset.week) { state.next = b.dataset.week === 'next'; return render(); }
   if (b.dataset.undo) return undoCompletion(b.dataset.undo);
