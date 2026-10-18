@@ -3,7 +3,8 @@
 //
 //   node scripts/assistant_cli/cli.mjs weekend [--next] [--today YYYY-MM-DD] [--json]
 //   node scripts/assistant_cli/cli.mjs tasks   [--due] [--json]
-//   node scripts/assistant_cli/cli.mjs done "hood" "kitchen: mop floor" [--date YYYY-MM-DD] [--dry-run]
+//   node scripts/assistant_cli/cli.mjs done "hood" "kitchen: mop floor" [--date YYYY-MM-DD] [--min N] [--dry-run]
+//        --min N: it took N minutes (0-600); the task's estimate becomes the average of its last 3 logged times (nearest 5)
 //   node scripts/assistant_cli/cli.mjs undo "hood"                     (removes the latest completion for that task)
 //   node scripts/assistant_cli/cli.mjs snooze "hood" [--date YYYY-MM-DD] ('Not this weekend': default = next weekend's Saturday)
 //   node scripts/assistant_cli/cli.mjs unsnooze "hood"
@@ -16,7 +17,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { computeAll, thisWeekend, weekEndFor, addDays, fmtDate, nextWeekendSat, saturdayOnOrAfter, uniqueSupplies, currentAway } from '../../src/schedule.js';
+import { computeAll, thisWeekend, weekEndFor, addDays, fmtDate, nextWeekendSat, saturdayOnOrAfter, uniqueSupplies, currentAway, loggedMinutes, effortFromLogs, validMinutes } from '../../src/schedule.js';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
 const argv = process.argv.slice(2);
@@ -33,7 +34,7 @@ export class RestStore {
   async load() {
     const [tasks, completions, settings, away] = await Promise.all([
       this.req('GET', '/tasks?select=*&active=eq.true&order=sort_key.asc'),
-      this.req('GET', '/completions?select=id,task_id,done_on,note,source,created_at&order=done_on.asc'),
+      this.req('GET', '/completions?select=*&order=done_on.asc'),   // * : includes minutes once migration 003 is applied
       this.req('GET', '/settings?select=cap_min,owner_id'),
       this.req('GET', '/away_periods?select=*&order=start_date.asc').catch(() => []),   // before migration 002: none
     ]);
@@ -42,11 +43,16 @@ export class RestStore {
   async updateTask(task, patch) { await this.req('PATCH', `/tasks?id=eq.${encodeURIComponent(task.id)}`, patch); }
   async addAway(owner_id, start_date, end_date) { const [a] = await this.req('POST', '/away_periods', { owner_id, start_date, end_date }, 'return=representation'); return a; }
   async removeAway(id) { await this.req('DELETE', `/away_periods?id=eq.${encodeURIComponent(id)}`); }
-  async addCompletion(task, done_on, note) {
-    const [c] = await this.req('POST', '/completions', { owner_id: task.owner_id, task_id: task.id, done_on, note, source: 'assistant' }, 'return=representation');
-    return c;
+  async addCompletion(task, done_on, note, minutes = null) {
+    const row = { owner_id: task.owner_id, task_id: task.id, done_on, note, source: 'assistant' };
+    try { const [c] = await this.req('POST', '/completions', minutes == null ? row : { ...row, minutes }, 'return=representation'); return c; }
+    catch (err) {
+      if (minutes == null || !/minutes/.test(err.message)) throw err;   // column missing (migration 003 not applied): save the tick without it
+      const [c] = await this.req('POST', '/completions', row, 'return=representation'); c.minutesSkipped = true; return c;
+    }
   }
   async removeCompletion(id) { await this.req('DELETE', `/completions?id=eq.${encodeURIComponent(id)}`); }
+  async setCompletionMinutes(id, minutes) { await this.req('PATCH', `/completions?id=eq.${encodeURIComponent(id)}`, { minutes }); }
 }
 
 export class FileStore {
@@ -56,11 +62,12 @@ export class FileStore {
     return JSON.parse(fs.readFileSync(this.file));
   }
   async load() { return this.read(); }
-  async addCompletion(task, done_on, note) {
-    const db = this.read(); const c = { id: `cli-${Date.now()}-${db.completions.length}`, task_id: task.id, done_on, note, source: 'assistant', created_at: new Date().toISOString() };
+  async addCompletion(task, done_on, note, minutes = null) {
+    const db = this.read(); const c = { id: `cli-${Date.now()}-${db.completions.length}`, task_id: task.id, done_on, note, source: 'assistant', minutes, created_at: new Date().toISOString() };
     db.completions.push(c); fs.writeFileSync(this.file, JSON.stringify(db, null, 1)); return c;
   }
   async removeCompletion(id) { const db = this.read(); db.completions = db.completions.filter((c) => c.id !== id); this.write(db); }
+  async setCompletionMinutes(id, minutes) { const db = this.read(); db.completions.find((c) => c.id === id).minutes = minutes; this.write(db); }
   write(db) { fs.writeFileSync(this.file, JSON.stringify(db, null, 1)); }
   async updateTask(task, patch) { const db = this.read(); Object.assign(db.tasks.find((t) => t.id === task.id), patch); this.write(db); }
   async addAway(_owner, start_date, end_date) { const db = this.read(); const a = { id: `away-${Date.now()}`, start_date, end_date, created_at: new Date().toISOString() }; (db.away ||= []).push(a); this.write(db); return a; }
@@ -91,7 +98,7 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 export async function main(args = argv) {
   const mock = opt('--mock') || process.env.CHORES_MOCK;
   const today = opt('--today') || new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Dublin' });
-  const date = opt('--date'); const json = flag('--json'), next = flag('--next'), dry = flag('--dry-run'), dueOnly = flag('--due');
+  const date = opt('--date'), minArg = opt('--min'); const json = flag('--json'), next = flag('--next'), dry = flag('--dry-run'), dueOnly = flag('--due');
   const [cmd, ...rest] = args;
   const store = mock ? new FileStore(mock) : (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY)
     ? new RestStore(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY) : null;
@@ -148,6 +155,7 @@ export async function main(args = argv) {
   if (cmd === 'done' || cmd === 'undo' || cmd === 'snooze' || cmd === 'unsnooze') {
     if (date && !ISO.test(date)) { console.error('--date must be YYYY-MM-DD'); return 1; }
     if (cmd === 'done' && date > today) { console.error(`--date ${date} is in the future (today is ${today})`); return 1; }
+    if (minArg != null && validMinutes(minArg) == null) { console.error('--min must be a whole number of minutes, 0-600'); return 1; }
     const due = new Set(we.rows.map((r) => r.task.id)); let rc = 0;
     for (const q of rest) {
       const m = matchTask(q, db.tasks, due);
@@ -167,12 +175,31 @@ export async function main(args = argv) {
         console.log(`${dry ? '[dry-run] would ' : ''}${z ? `💤 snoozed ${t.room}: ${t.name} to ${fmtDate(z)}` : `unsnoozed ${t.room}: ${t.name}`} → next due ${fmtDate(after.next_due)}`); continue;
       }
       const d = date || today;
-      if (db.completions.some((c) => c.task_id === t.id && c.done_on === d)) { console.log(`- ${t.room}: ${t.name} is already marked done ${fmtDate(d)} (nothing added)`); continue; }
+      const same = db.completions.find((c) => c.task_id === t.id && c.done_on === d);
+      if (same && minArg != null && !dry) {   // already ticked that day: just log the time on it
+        const mins = validMinutes(minArg);
+        try { await store.setCompletionMinutes(same.id, mins); } catch (err) { console.log(`- couldn't save minutes (${/minutes/.test(err.message) ? 'apply supabase/migrations/003_minutes.sql' : err.message})`); rc = 2; continue; }
+        same.minutes = mins; const e = effortFromLogs(loggedMinutes(t.id, db.completions));
+        if (e != null && e !== t.effort_min) { await store.updateTask(t, { effort_min: e }); }
+        console.log(`✓ ${t.room}: ${t.name} (done ${fmtDate(d)}) took ${mins} min · estimate ${e != null && e !== t.effort_min ? `${t.effort_min ?? '–'} → ${e}` : `stays ${t.effort_min ?? '–'}`} min`);
+        if (e != null) t.effort_min = e; continue;
+      }
+      if (same) { console.log(`- ${t.room}: ${t.name} is already marked done ${fmtDate(d)} (nothing added)`); continue; }
       const last = computeAll([t], db.completions, today)[0].last_effective;
       if (last && d < last) console.log(`! ${t.room}: ${t.name} was last done ${fmtDate(last)} – a tick on ${fmtDate(d)} won't change the next due (the app replaces it when ticked there, or edit Last done)`);
-      if (!dry) { await store.addCompletion(t, d, null); db.completions.push({ task_id: t.id, done_on: d }); if (t.snooze_until) { await store.updateTask(t, { snooze_until: null }); t.snooze_until = null; } }
+      const mins = minArg != null ? validMinutes(minArg) : null; let est = '';
+      if (!dry) {
+        const c = await store.addCompletion(t, d, null, mins); db.completions.push({ task_id: t.id, done_on: d, minutes: c?.minutesSkipped ? null : mins, created_at: c?.created_at || new Date().toISOString() });
+        if (t.snooze_until) { await store.updateTask(t, { snooze_until: null }); t.snooze_until = null; }
+        if (c?.minutesSkipped) est = ' (minutes not saved: apply supabase/migrations/003_minutes.sql)';
+        else if (mins != null) {
+          const e = effortFromLogs(loggedMinutes(t.id, db.completions));
+          if (e != null && e !== t.effort_min) { await store.updateTask(t, { effort_min: e }); est = ` · took ${mins} min, estimate ${t.effort_min ?? '–'} → ${e} min`; t.effort_min = e; }
+          else est = ` · took ${mins} min, estimate stays ${t.effort_min ?? '–'} min`;
+        }
+      } else if (mins != null) est = ` · took ${mins} min, estimate would be ${effortFromLogs(loggedMinutes(t.id, [...db.completions, { task_id: t.id, done_on: d, minutes: mins, created_at: '9999' }]))} min`;
       const after = computeAll([dry ? { ...t, snooze_until: null } : t], [...db.completions, ...(dry ? [{ task_id: t.id, done_on: d }] : [])], today, { away })[0];
-      console.log(`${dry ? '[dry-run] would mark' : '✓ marked'} ${t.room}: ${t.name} done ${fmtDate(d)} (${m.how}) → next due ${fmtDate(after.next_due)}`);
+      console.log(`${dry ? '[dry-run] would mark' : '✓ marked'} ${t.room}: ${t.name} done ${fmtDate(d)} (${m.how}) → next due ${fmtDate(after.next_due)}${est}`);
     }
     return rc;
   }

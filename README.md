@@ -118,3 +118,10 @@ node scripts/assistant_cli/cli.mjs export chores.xlsx
   due/overdue before you leave are not moved – they are the backlog you left. Several trips apply in date order. Daily habits are
   never shifted. Snooze is applied after away mode.
 * **Supplies** (`tasks.supplies`, comma-separated): shown in the task sheet, on This weekend (*You'll need*) and in `cli.mjs weekend`.
+
+## v13 – optional "took __ min"
+- After a tick, the toast offers **Took __ min?** (number + Save; placeholder = current estimate; stays up while you type). Ignoring it is fine.
+- Saving sets the task's estimate to the average of its last 3 logged times (rounded to 5 min; under 5 kept exact). Toast says "Estimate now X min" with Undo (reverts both).
+- Task sheet → Last done shows "Sat 17 Oct · 20 min"; tap **+ time / edit** to add or change minutes on a past tick.
+- CLI: `done <task> --min N`.
+- Needs `supabase/migrations/003_minutes.sql` (adds nullable `completions.minutes`, 0–600). Until it's applied the input is hidden and ticks work as before.

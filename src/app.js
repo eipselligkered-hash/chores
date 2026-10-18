@@ -1,6 +1,6 @@
 import { computeAll, computeTask, thisWeekend, weekEndFor, fmtDate, addDays, toDay, FREQUENCIES, SEASONS, PRIORITIES, WEEKDAYS,
-  nextWeekendSat, saturdayOnOrAfter, uniqueSupplies, currentAway, effectiveLast, fromDay, planDone, EFFORT_BUCKETS, effortBucket, byNextDue } from './schedule.js?v=12';
-import { makeBackend } from './data.js?v=12';
+  nextWeekendSat, saturdayOnOrAfter, uniqueSupplies, currentAway, effectiveLast, fromDay, planDone, EFFORT_BUCKETS, effortBucket, byNextDue, loggedMinutes, effortFromLogs, validMinutes } from './schedule.js?v=13';
+import { makeBackend } from './data.js?v=13';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -70,7 +70,7 @@ async function markDone(taskId, doneOn, label) {
   const prev = { snooze_until: t.snooze_until || null, last_done: t.last_done || null }, patch = {};
   if (prev.snooze_until) patch.snooze_until = null;   // done supersedes 'Not this weekend'
   if (p.last_done !== undefined) patch.last_done = p.last_done;
-  let c;
+  let c; const existing = p.exists ? state.db.completions.find((x) => x.task_id === taskId && x.done_on === doneOn) : null;
   busy.add(taskId);
   try {
     if (!p.exists) c = await be.addCompletion(taskId, doneOn, 'app');
@@ -78,12 +78,13 @@ async function markDone(taskId, doneOn, label) {
     if (Object.keys(patch).length) await be.updateTask(taskId, patch);
   } catch (err) { busy.delete(taskId); return fail(err); }
   await refresh().catch(console.error).finally(() => busy.delete(taskId));
+  const cid = c?.id || existing?.id;
   toast(`${label} – done ${fmtDate(doneOn)}${p.replaces ? ` (was ${fmtDate(p.replaces)})` : ''}`, async () => {
     if (c) await be.removeCompletion(c.id);
-    for (const x of p.later) await be.addCompletion(taskId, x.done_on, x.source, x.note);
+    for (const x of p.later) await be.addCompletion(taskId, x.done_on, x.source, x.note, x.minutes);
     if (Object.keys(patch).length) await be.updateTask(taskId, Object.fromEntries(Object.keys(patch).map((k) => [k, prev[k]])));
     await refresh();
-  });
+  }, be.hasMinutes && cid ? { placeholder: t.effort_min ?? '', save: (m) => saveMinutes(taskId, cid, m) } : null);
 }
 async function setSnooze(t, date) {
   const prev = t.snooze_until || null;
@@ -92,14 +93,48 @@ async function setSnooze(t, date) {
   await refresh().catch(console.error);
   toast(date ? `${t.name} – snoozed to ${fmtDate(date)}` : 'Snooze removed', async () => { await be.updateTask(t.id, { snooze_until: prev }); await refresh(); });
 }
+// 'took __ min': log it on the tick and re-estimate the task (average of the last 3 logged times, nearest 5)
+async function saveMinutes(taskId, cid, minutes) {
+  if (offlineNow()) return fail(new Error('offline'));
+  const t = state.db.tasks.find((x) => x.id === taskId), c = state.db.completions.find((x) => x.id === cid); if (!t || !c) return;
+  const prevMin = c.minutes ?? null, prevEff = t.effort_min ?? null;
+  const est = effortFromLogs(loggedMinutes(taskId, state.db.completions.map((x) => (x.id === cid ? { ...x, minutes } : x))));
+  const changed = est != null && est !== prevEff;
+  try {
+    await be.setCompletionMinutes(cid, minutes);
+    if (changed) await be.updateTask(taskId, { effort_min: est });
+  } catch (err) { return fail(err); }
+  await refresh().catch(console.error);
+  const what = minutes == null ? 'Time cleared' : `Took ${minutes} min`;
+  toast(changed ? `${what} · Estimate now ${est} min` : `${what} · estimate stays ${prevEff ?? '–'} min`, async () => {
+    await be.setCompletionMinutes(cid, prevMin);
+    if (changed) await be.updateTask(taskId, { effort_min: prevEff });
+    await refresh();
+  });
+}
 const undoCompletion = safe(async (id) => { await be.removeCompletion(id); await refresh(); toast('Undone'); });
 
 let toastTimer;
-function toast(msg, undo) {
+function toast(msg, undo, took) {
   const t = $('#toast'); clearTimeout(toastTimer);
-  t.innerHTML = `<span>${esc(msg)}</span>${undo ? '<button id="undo">Undo</button>' : ''}`; t.hidden = false;
+  t.innerHTML = `<span>${esc(msg)}</span>${undo ? '<button id="undo">Undo</button>' : ''}` +
+    (took ? `<form class="took" id="took" novalidate><label for="took-min">Took</label><input id="took-min" type="number" inputmode="numeric" min="0" max="600" step="1" placeholder="${esc(took.placeholder)}" aria-label="How many minutes it took"><span>min?</span><button>Save</button></form>` : '');
+  t.hidden = false;
+  const arm = (ms) => { clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), ms); };
   if (undo) $('#undo').onclick = async () => { t.hidden = true; await safe(undo)(); };
-  toastTimer = setTimeout(() => (t.hidden = true), 6000);
+  if (took) {
+    const inp = $('#took-min');
+    inp.onfocus = () => clearTimeout(toastTimer);          // stays up while you type
+    inp.onblur = () => arm(8000);
+    inp.oninput = () => inp.classList.remove('bad');
+    $('#took').onsubmit = async (e) => {
+      e.preventDefault();
+      if (!inp.value.trim()) { t.hidden = true; return; }
+      const m = validMinutes(inp.value); if (m == null) { inp.classList.add('bad'); inp.focus(); return; }
+      t.hidden = true; await safe(() => took.save(m))();
+    };
+  }
+  arm(took ? 9000 : 6000);
 }
 function pickDate(task) {
   const d = $('#sheet'); $('#sheet-task').textContent = `${task.room}: ${task.name}`;
@@ -247,7 +282,7 @@ async function toggleCatchupNow(id) {
 
 function render() {
   const today = localToday();
-  $('#today').textContent = fmtDate(today, { long: true }) + ' · v12' + (be.kind === 'mock' ? ' · local mock' : '') + (state.conn === 'updating' ? ' · updating…' : '');
+  $('#today').textContent = fmtDate(today, { long: true }) + ' · v13' + (be.kind === 'mock' ? ' · local mock' : '') + (state.conn === 'updating' ? ' · updating…' : '');
   $('#account').textContent = '⚙ ' + (be.kind === 'mock' ? 'Mock data' : (be.user?.email || ''));
   document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === state.tab));
   $('#tab-catchup').hidden = !state.db.catchup.length || today > addDays(CU_END, 14);
@@ -343,9 +378,12 @@ const linkify = (s) => esc(s).replace(/https?:\/\/[^\s;,)]+/g, (u) => `<a href="
 function openTask(id) {
   const t = state.db.tasks.find((x) => x.id === id); if (!t) return;
   const today = localToday(), r = computeTask(t, state.db.completions, today, { away: away() });
-  const hist = state.db.completions.filter((c) => c.task_id === t.id).map((c) => c.done_on);
-  if (t.last_done && !hist.includes(t.last_done)) hist.push(t.last_done);
-  hist.sort().reverse();
+  const hist = state.db.completions.filter((c) => c.task_id === t.id).map((c) => ({ date: c.done_on, id: c.id, minutes: c.minutes ?? null, at: c.created_at || '' }));
+  if (t.last_done && !hist.some((h) => h.date === t.last_done)) hist.push({ date: t.last_done, id: null, minutes: null, at: '' });
+  hist.sort((a, b) => b.date.localeCompare(a.date) || String(b.at).localeCompare(String(a.at)));
+  const canLog = be.hasMinutes && t.active !== false;
+  const histLine = (h) => `<div class="hist-line">${fmtDate(h.date, { long: true })}${h.minutes != null ? ` · ${h.minutes} min` : ''}${canLog && h.id
+    ? ` <button type="button" class="link small-link" data-cmin="${esc(h.id)}" aria-label="${h.minutes != null ? 'Change' : 'Add'} the time for ${fmtDate(h.date)}">${h.minutes != null ? 'edit' : '+ time'}</button>` : ''}</div>`;
   const daily = t.frequency === 'Daily', retired = t.active === false;
   const snoozeTo = nextWeekendSat(today);
   const d = $('#task-sheet');
@@ -355,7 +393,7 @@ function openTask(id) {
       <dt>Next due</dt><dd>${daily ? 'every day' : `${fmtDate(r.next_due, { long: true })} ${statusChip(r.status)}`}
         ${r.snoozed_until ? `<div class="snz-line"><span class="chip snz">💤 snoozed to ${fmtDate(r.snoozed_until)}</span> <button type="button" class="link" id="ts-unsnooze">Undo</button></div>` : ''}
         ${r.away_shifted ? `<div class="muted small">moved from ${fmtDate(r.due_before)} (away)</div>` : ''}${r.plan && !t.due_weekday ? `<div class="muted small">${esc(r.plan)}</div>` : ''}</dd>
-      <dt>Last done</dt><dd>${hist.length ? hist.slice(0, 4).map((x) => fmtDate(x, { long: true })).join('<br>') : '<span class="muted">never</span>'}</dd>
+      <dt>Last done</dt><dd>${hist.length ? hist.slice(0, 4).map(histLine).join('') : '<span class="muted">never</span>'}</dd>
       ${t.supplies ? `<dt>You'll need</dt><dd>${esc(t.supplies)}</dd>` : ''}
     </dl>
     ${t.notes ? `<div class="howto"><b>How to</b><p>${linkify(t.notes)}</p></div>` : ''}
@@ -374,7 +412,18 @@ function openTask(id) {
     }
   }
   const un = $('#ts-unsnooze', d); if (un) un.onclick = go(() => setSnooze(t, null));
-  d.showModal(); d.scrollTop = 0;
+  d.querySelectorAll('[data-cmin]').forEach((b) => (b.onclick = () => {
+    const h = hist.find((x) => x.id === b.dataset.cmin), box = document.createElement('span'); box.className = 'took inline';
+    box.innerHTML = `<input type="number" inputmode="numeric" min="0" max="600" step="1" value="${h.minutes ?? ''}" placeholder="${esc(t.effort_min ?? '')}" aria-label="Minutes it took"><span>min</span><button type="button" class="ghost">Save</button>`;
+    b.replaceWith(box); const inp = box.querySelector('input'); inp.focus();
+    box.querySelector('button').onclick = async () => {
+      const v = inp.value.trim(), m = v === '' ? null : validMinutes(v);
+      if (v !== '' && m == null) { inp.classList.add('bad'); return inp.focus(); }
+      if (m === h.minutes) return openTask(t.id);
+      d.close(); await saveMinutes(t.id, h.id, m);   // the toast (with Undo) can't show above an open sheet
+    };
+  }));
+  if (!d.open) d.showModal(); d.scrollTop = 0;
 }
 
 function openEdit(t) {

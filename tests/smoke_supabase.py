@@ -1,4 +1,4 @@
-"""v12 smoke test against a FAKE Supabase (no network, no real data): email-code sign-in, cached data + 'updating…',
+"""v12/v13 smoke test against a FAKE Supabase (no network, no real data): email-code sign-in, cached data + 'updating…',
 paused-database message + Retry, offline open via the service worker, offline tick shows an error, backup download.
 usage: (python3 -m http.server 8765 &) ; /workspace/.venv-pw/bin/python tests/smoke_supabase.py [base_url]"""
 import sys, os, json, time, base64, re
@@ -18,7 +18,7 @@ def jwt():
     now = int(time.time())
     return f"{b64({'alg':'HS256','typ':'JWT'})}.{b64({'sub':UID,'email':EMAIL,'role':'authenticated','aud':'authenticated','exp':now+3600,'iat':now})}.c2ln"
 USER = {"id": UID, "email": EMAIL, "aud": "authenticated", "role": "authenticated", "app_metadata": {}, "user_metadata": {}, "created_at": "2026-10-01T00:00:00Z"}
-state = {"paused": False, "verify": 0, "otp": 0}
+state = {"paused": False, "verify": 0, "otp": 0, "minutes_col": False}   # minutes_col: migration 003 applied?
 DB = {"tasks": [dict(t, owner_id=UID) for t in SEED["tasks"]], "completions": [], "catchup_items": [dict(c, owner_id=UID) for c in SEED["catchup"]],
       "settings": [{"owner_id": UID, "cap_min": 300}], "away_periods": []}
 def fake(route):
@@ -37,6 +37,8 @@ def fake(route):
     m = re.match(r"/rest/v1/(\w+)", path)
     if m:
         t = m.group(1); rows = DB.get(t, [])
+        if t == "completions" and not state["minutes_col"] and ("minutes" in path or '"minutes"' in (req.post_data or "")):
+            return route.fulfill(status=400, headers=hdr, body=json.dumps({"code": "42703", "message": "column completions.minutes does not exist"}))
         if req.method == "GET":
             single = "vnd.pgrst.object" in (req.headers.get("accept") or "")
             return route.fulfill(status=200, headers=hdr, body=json.dumps((rows[0] if rows else None) if single else rows))
@@ -64,7 +66,9 @@ with sync_playwright() as p:
     ok("wrong code: clear message", "wrong or has expired" in pg.inner_text(".login .err"))
     pg.fill("#code", "123456"); pg.click("#code-form button")
     pg.wait_for_selector(".cap", timeout=15000)
-    ok("right code signs in and loads the chores", "v12" in pg.inner_text("#today") and pg.locator(".item[data-id]").count() > 0)
+    ok("right code signs in and loads the chores", "v13" in pg.inner_text("#today") and pg.locator(".item[data-id]").count() > 0)
+    pg.locator(".item[data-id] .tick").first.tap(); pg.wait_for_selector("#toast:not([hidden])")
+    ok("before migration 003: tick works, no minutes input", "done" in pg.inner_text("#toast") and pg.locator("#took-min").count() == 0 and len(DB["completions"]) == 1)
     key = f"chores.cache.v1.{UID}"
     ok("last data cached on the device", pg.evaluate(f"!!localStorage.getItem('{key}')"))
     # backup

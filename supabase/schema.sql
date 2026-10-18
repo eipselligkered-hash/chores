@@ -38,6 +38,7 @@ create table if not exists public.completions (
   done_on     date not null default current_date,
   note        text,
   source      text not null default 'app',      -- app | assistant | workbook | catchup
+  minutes     int check (minutes between 0 and 600),   -- optional 'took __ min' (v13, migration 003)
   created_at  timestamptz not null default now()
 );
 create index if not exists completions_task_idx on public.completions (task_id, done_on desc);

@@ -1,6 +1,6 @@
 // Minimal stand-in for Supabase's PostgREST (just what the CLI uses): GET with select/eq/order, POST insert, PATCH/DELETE ?id=eq.
 import http from 'node:http';
-export function startFake(db, key = 'test-service-key') {
+export function startFake(db, key = 'test-service-key', { noMinutes = false } = {}) {
   const log = [];
   const srv = http.createServer(async (req, res) => {
     const u = new URL(req.url, 'http://x'); const m = u.pathname.match(/^\/rest\/v1\/(\w+)$/);
@@ -12,6 +12,7 @@ export function startFake(db, key = 'test-service-key') {
     const pass = (row) => filt.every(([k, v]) => { const [op, val] = [v.slice(0, v.indexOf('.')), v.slice(v.indexOf('.') + 1)]; return op === 'eq' && String(row[k]) === val; });
     let body = ''; for await (const ch of req) body += ch;
     if (req.method === 'GET') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify(table.filter(pass))); }
+    if (noMinutes && m[1] === 'completions' && /"minutes"/.test(body)) { res.writeHead(400, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ code: 'PGRST204', message: "Could not find the 'minutes' column of 'completions' in the schema cache" })); }
     if (req.method === 'POST') {
       const rows = [].concat(JSON.parse(body)).map((r) => {
         if (!r.owner_id) throw new Error('owner_id required (not-null)');

@@ -50,6 +50,20 @@ export function effectiveLast(task, completions = []) {
   return e || null;
 }
 
+/** 'Took __ min': the logged minutes of a task, newest tick first. */
+export const loggedMinutes = (taskId, completions) => completions
+  .filter((c) => c.task_id === taskId && c.minutes != null && c.minutes !== '')
+  .sort((a, b) => b.done_on.localeCompare(a.done_on) || String(b.created_at || '').localeCompare(String(a.created_at || '')))
+  .map((c) => Number(c.minutes));
+/** New effort estimate from logged times: average of the last up to 3, rounded to the nearest 5 (at least 5);
+ *  an average under 5 is kept as is (rounded to a whole minute). null when nothing is logged. */
+export function effortFromLogs(mins) {
+  const xs = mins.slice(0, 3); if (!xs.length) return null;
+  const avg = xs.reduce((s, x) => s + x, 0) / xs.length;
+  return avg < 5 ? Math.round(avg) : Math.max(5, Math.round(avg / 5) * 5);
+}
+export const validMinutes = (v) => { const s = String(v ?? '').trim(); if (!/^\d{1,3}$/.test(s)) return null; const n = Number(s); return n <= 600 ? n : null; };
+
 /** Ticking a task done on doneOn so that it actually takes effect (effective last = latest of all dates).
  *  exists: there is already a tick on doneOn (don't add another). duplicate: exists and nothing later - nothing to do.
  *  later: completions after doneOn, to remove. last_done: new typed Last done when the typed one is later than doneOn

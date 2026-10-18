@@ -3,11 +3,12 @@
 //   SupabaseBackend  - supabase-js v2 from a CDN, email magic-link auth, RLS-protected tables
 // Both expose: init(), user, signIn(email), verifyCode(email, code), signOut(), load() -> {tasks, completions, catchup, settings, away},
 //              addCompletion(taskId, doneOn, source), removeCompletion(id), setCatchupDone(id, doneOn|null),
-//              addTask(task), updateTask(id, patch), addAway(start, end), removeAway(id), onChange(cb)
+//              addTask(task), updateTask(id, patch), addAway(start, end), removeAway(id), onChange(cb),
+//              hasMinutes, setCompletionMinutes(id, minutes|null)  ('took __ min', needs migration 003 on Supabase)
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2));
 
 export class MockBackend {
-  constructor(key = 'chores.mock.v1') { this.key = key; this.kind = 'mock'; this.user = { email: 'local mock (this device only)' }; this.cbs = []; }
+  constructor(key = 'chores.mock.v1') { this.key = key; this.kind = 'mock'; this.hasMinutes = true; this.user = { email: 'local mock (this device only)' }; this.cbs = []; }
   async init() {
     const raw = localStorage.getItem(this.key);
     if (raw) this.db = JSON.parse(raw);
@@ -23,11 +24,12 @@ export class MockBackend {
   save() { localStorage.setItem(this.key, JSON.stringify(this.db)); }
   async signIn() {} async verifyCode() {} async signOut() {}
   async load() { return structuredClone(this.db); }
-  async addCompletion(task_id, done_on, source = 'app', note = null) {
-    const c = { id: uid(), task_id, done_on, note, source, created_at: new Date().toISOString() };
+  async addCompletion(task_id, done_on, source = 'app', note = null, minutes = null) {
+    const c = { id: uid(), task_id, done_on, note, source, minutes, created_at: new Date().toISOString() };
     this.db.completions.push(c); this.save(); return c;
   }
   async removeCompletion(id) { this.db.completions = this.db.completions.filter((c) => c.id !== id); this.save(); }
+  async setCompletionMinutes(id, minutes) { const c = this.db.completions.find((x) => x.id === id); if (!c) throw new Error('Tick not found'); c.minutes = minutes; this.save(); }
   async setCatchupDone(id, done_on) { const i = this.db.catchup.find((x) => x.id === id); if (i) i.done_on = done_on; this.save(); }
   async addTask(task) {
     if (this.db.tasks.some((t) => t.room === task.room && t.name === task.name)) throw new Error(`There is already a task “${task.name}” in ${task.room}.`);
@@ -45,7 +47,7 @@ export class MockBackend {
 }
 
 export class SupabaseBackend {
-  constructor(url, anonKey) { this.url = url; this.anonKey = anonKey; this.kind = 'supabase'; this.user = null; }
+  constructor(url, anonKey) { this.url = url; this.anonKey = anonKey; this.kind = 'supabase'; this.user = null; this.hasMinutes = false; }
   async init() {
     const { createClient } = await loadSupabase();
     this.sb = createClient(this.url, this.anonKey, { auth: { persistSession: true, detectSessionInUrl: true, flowType: 'pkce' } });
@@ -84,6 +86,12 @@ export class SupabaseBackend {
     ]);
     // away_periods arrives with migration 002 - until it is applied, treat as "not away"
     const away = await this.q(this.sb.from('away_periods').select('*').order('start_date')).catch(() => []);
+    // completions.minutes arrives with migration 003 - until then the 'took __ min' input stays hidden
+    if (!this.minutesChecked) {
+      if (completions.length) this.hasMinutes = 'minutes' in completions[0];
+      else { const { error } = await this.sb.from('completions').select('minutes').limit(1); this.hasMinutes = !error; }
+      this.minutesChecked = true;
+    }
     return { tasks, completions, catchup, settings: settings || {}, away };
   }
   // columns added by migration 002; if it isn't applied yet, retry without them so the rest still saves
@@ -106,10 +114,16 @@ export class SupabaseBackend {
     catch (err) { throw /away_periods|schema cache|relation/i.test(err.message || '') ? new Error('Away mode needs the database update (supabase/migrations/002_features.sql).') : err; }
   }
   async removeAway(id) { await this.q(this.sb.from('away_periods').delete().eq('id', id)); }
-  async addCompletion(task_id, done_on, source = 'app', note = null) {
-    return this.q(this.sb.from('completions').insert({ task_id, done_on, source, note }).select().single());
+  async addCompletion(task_id, done_on, source = 'app', note = null, minutes = null) {
+    return this.q(this.sb.from('completions').insert({ task_id, done_on, source, note, ...(minutes != null && this.hasMinutes ? { minutes } : {}) }).select().single());
   }
   async removeCompletion(id) { await this.q(this.sb.from('completions').delete().eq('id', id)); }
+  async setCompletionMinutes(id, minutes) {
+    try { await this.q(this.sb.from('completions').update({ minutes }).eq('id', id)); } catch (err) {
+      if (/minutes/.test(err.message || '') && /column|schema cache/i.test(err.message || '')) { this.hasMinutes = false; throw new Error('Logging minutes needs the database update (supabase/migrations/003_minutes.sql).'); }
+      throw err;
+    }
+  }
   async setCatchupDone(id, done_on) { await this.q(this.sb.from('catchup_items').update({ done_on }).eq('id', id)); }
   onChange(cb) {
     this.sb.channel('chores').on('postgres_changes', { event: '*', schema: 'public' }, () => cb()).subscribe();
@@ -120,7 +134,7 @@ export class SupabaseBackend {
 function loadSupabase() {
   if (window.supabase?.createClient) return Promise.resolve(window.supabase);
   return new Promise((ok, ko) => {
-    const s = document.createElement('script'); s.src = new URL('../vendor/supabase.js?v=12', import.meta.url).href;
+    const s = document.createElement('script'); s.src = new URL('../vendor/supabase.js?v=13', import.meta.url).href;
     s.onload = () => (window.supabase?.createClient ? ok(window.supabase) : ko(new Error('supabase-js did not load')));
     s.onerror = () => ko(new Error('Could not load supabase-js (offline?)'));
     document.head.appendChild(s);

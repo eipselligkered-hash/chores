@@ -136,3 +136,13 @@ details.fold > summary.sec small { text-align: right; }
 .conn-card p { margin: 0 0 12px; } .conn-card a { color: var(--blue); }
 .toggle { min-height: 44px; }
 #account:empty { display: none; }
+/* v13: 'took __ min' in the toast and the task sheet */
+.toast { flex-wrap: wrap; }
+.took { display: flex; align-items: center; gap: 8px; flex-basis: 100%; font-size: 14px; }
+.toast .took { border-top: 1px solid rgba(255,255,255,.15); padding-top: 8px; color: #dfe8e4; }
+.took input { width: 76px; min-height: 40px; font: inherit; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line); background: #fff; color: var(--ink); }
+.took input.bad { border-color: var(--red); outline: 2px solid var(--red); }
+.toast .took button { margin-left: auto; }
+.took.inline { display: inline-flex; flex-basis: auto; margin-left: 6px; } .took.inline button { min-height: 40px; }
+.hist-line { min-height: 28px; display: flex; align-items: center; flex-wrap: wrap; gap: 0 4px; }
+.small-link { padding: 2px 6px; }

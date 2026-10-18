@@ -16,7 +16,7 @@ with sync_playwright() as p:
     pg.on("console", lambda m: m.type == "error" and errors.append(m.text)); pg.on("pageerror", lambda e: errors.append(str(e)))
     pg.on("dialog", lambda d: d.accept())
     pg.goto(BASE + "?today=2026-11-06"); pg.wait_for_selector(".cap")
-    ok("header shows v12", "v12" in pg.inner_text("#today"))
+    ok("header shows v13", "v13" in pg.inner_text("#today"))
     # supplies line
     ok("You'll need line present", pg.locator("#needs").count() == 1)
     ok("You'll need preview when collapsed", "Degreaser" in pg.inner_text("#needs summary"))
@@ -107,6 +107,34 @@ with sync_playwright() as p:
     pg.click("[data-filter=todo]"); pg.wait_for_timeout(200)
     ok("By time works with the To do filter", pg.locator("details.room .item[data-id]").count() > 0 and pg.locator("details.room .chip.s-OK").count() == 0)
     pg.click("[data-filter=all]"); pg.click("[data-group=room]"); pg.wait_for_timeout(200)
+    # v13: 'took __ min' in the tick toast -> logs minutes, re-estimates, Undo reverts both; sheet history shows + edits it
+    mockdb = lambda: pg.evaluate("JSON.parse(localStorage.getItem('chores.mock.v1'))")
+    pg.fill("#q", "descale kettle"); pg.wait_for_timeout(200)
+    krow = pg.locator("details.room .item[data-id]", has_text="Descale kettle").first
+    kid = krow.get_attribute("data-id"); keff = lambda: [t for t in mockdb()["tasks"] if t["id"] == kid][0]["effort_min"]
+    eff0 = keff()
+    krow.locator(".tick").tap(); pg.wait_for_selector("#took-min")
+    ok("tick toast offers 'Took __ min?' with the estimate as placeholder", pg.get_attribute("#took-min", "placeholder") == str(eff0) and pg.input_value("#took-min") == "")
+    pg.focus("#took-min"); pg.wait_for_timeout(9500)
+    ok("toast stays up while the input is focused", pg.locator("#toast:not([hidden])").count() == 1)
+    pg.fill("#took-min", "12")
+    box = pg.locator("#toast").bounding_box()
+    ok("toast with input fits at 390px", box["x"] >= 0 and box["x"] + box["width"] <= 390 and pg.locator("#took button").bounding_box()["x"] + pg.locator("#took button").bounding_box()["width"] <= 390)
+    pg.screenshot(path=f"{OUT}/took_minutes.png")
+    pg.click("#took button"); pg.wait_for_timeout(400)
+    ok(f"saved: toast says the new estimate ({pg.inner_text('#toast')!r})", "Estimate now 10 min" in pg.inner_text("#toast") and keff() == 10)
+    ok("minutes stored on today's tick", [c for c in mockdb()["completions"] if c["task_id"] == kid and c["done_on"] == "2026-11-06"][0]["minutes"] == 12)
+    pg.click("#undo"); pg.wait_for_timeout(400)
+    ok("Undo reverts minutes and estimate", keff() == eff0 and [c for c in mockdb()["completions"] if c["task_id"] == kid and c["done_on"] == "2026-11-06"][0].get("minutes") is None)
+    krow.locator(".name").tap(); pg.wait_for_selector("#task-sheet[open]")
+    pg.click("#task-sheet [data-cmin]"); pg.fill("#task-sheet .took input", "35"); pg.click("#task-sheet .took button"); pg.wait_for_timeout(400)
+    ok("past tick edited from the sheet: estimate updated", keff() == 35 and "Estimate now 35 min" in pg.inner_text("#toast"))
+    krow.locator(".name").tap(); pg.wait_for_selector("#task-sheet[open]")
+    ok("sheet history shows the minutes", "Fri 6 Nov 2026 · 35 min" in pg.inner_text("#task-sheet dl.facts dd:nth-of-type(2)"))
+    pg.keyboard.press("Escape"); pg.wait_for_timeout(150)
+    krow.locator(".tick").tap(); pg.wait_for_timeout(300)
+    ok("already-done toast has no minutes input", pg.locator("#took-min").count() == 0)
+    pg.fill("#q", ""); pg.wait_for_timeout(200)
     # v9: an earlier date than the last done replaces it; repeated taps don't duplicate; edit shows the effective Last done
     mock = lambda: pg.evaluate("JSON.parse(localStorage.getItem('chores.mock.v1'))")
     iron_id = [t for t in mock()["tasks"] if t["name"] == "Ironing"][0]["id"]
