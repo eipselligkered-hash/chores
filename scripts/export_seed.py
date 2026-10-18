@@ -13,6 +13,29 @@ NS = uuid.UUID("6f1c2f0e-4c1e-4d7a-9a51-0c0ffee00001")   # stable ids -> seed.js
 FREQ = {"Daily": (1, 0), "Weekly": (7, 0), "Fortnightly": (14, 0), "Monthly": (30, 1), "Every 2 months": (60, 2),
         "Quarterly": (91, 3), "Half-yearly": (182, 6), "Yearly": (365, 12)}
 
+# Supplies ("You'll need") for the obvious tasks - not in the workbook; also applied by supabase/migrations/002_features.sql
+SUPPLIES = {
+    ("Kitchen", "Clean hood above stove"): "Degreaser",
+    ("Kitchen", "Descale kettle & coffee maker"): "Descaler or citric acid",
+    ("Kitchen", "Dishwasher: clean, salt & rinse aid"): "Dishwasher salt, Rinse aid, Dishwasher cleaner",
+    ("Kitchen", "Replace Scrub Daddy sponge"): "Scrub Daddy sponge",
+    ("Kitchen", "Clean oven"): "Oven cleaner",
+    ("Bathroom", "Mop & disinfect floor"): "Floor disinfectant",
+    ("Ensuite", "Mop & disinfect floor"): "Floor disinfectant",
+    ("Bathroom", "Tiles - Mold prevention"): "Mould spray",
+    ("Ensuite", "Tiles - Mold prevention"): "Mould spray",
+    ("Bathroom", "Tiles - Descale & check bath/shower sealant"): "Bathroom descaler",
+    ("Ensuite", "Tiles - Descale & check bath/shower sealant"): "Bathroom descaler",
+    ("Bathroom", "Change toothbrushes (bathroom & ensuite)"): "New toothbrushes / brush heads",
+    ("Laundry", "Clean washing machine (hot cycle, door seal, detergent drawer, filter)"): "Washing machine cleaner",
+    ("General", "Air purifiers (x2): replace U97 H-Trifilter (HEPA H13 + carbon)"): "2 x Hoover U97 H-Trifilter (part 35602347)",
+    ("General", "Smoke detectors: check/replace batteries & check first-aid kit (expiry dates)"): "Smoke alarm batteries (9V or AA - check each alarm), First-aid kit top-up",
+    ("General", "Clean radiators (dust behind & between fins)"): "Radiator brush",
+    ("General", "Feed plants"): "Plant feed",
+    ("Storage room/closet", "Check boiler pressure (1–1.5 bar cold) & bleed radiators"): "Radiator bleed key",
+    ("Entrance", "Polish shoes"): "Shoe polish",
+}
+
 def d(v):
     if v is None or v == "": return None
     if isinstance(v, dt.datetime): v = v.date()
@@ -37,7 +60,8 @@ def export(path):
                  season=g(r, "Season"), priority=g(r, "Priority"), effort_min=g(r, "Effort (min)"),
                  notes=g(r, "Notes"), active=True, sort_key=r[0].row,
                  plan_text=g(r, "Plan text (helper)"), plan_date=d(g(r, "Plan date (helper)")),
-                 source=g(r, "Source"), history=g(r, "History"))
+                 source=g(r, "Source"), history=g(r, "History"),
+                 supplies=SUPPLIES.get((room, name)), snooze_until=None)
         tasks.append(t); by_log[f"{room}: {name}"] = tid
     comps = []
     dl = wb["Done log"]
@@ -73,7 +97,7 @@ def to_sql(seed):
            "do $$ begin if (select count(*) from _me) <> 1 then raise exception 'Set YOUR_EMAIL to the address you signed in with'; end if; end $$;",
            f"insert into public.settings (owner_id, cap_min) select id, {seed['cap_min']} from _me on conflict (owner_id) do update set cap_min = excluded.cap_min;"]
     cols = ["id","room","name","frequency","interval_days","interval_months","last_done","planned_date","stagger_date","due_weekday",
-            "season","priority","effort_min","notes","active","sort_key","plan_text","plan_date","source","history"]
+            "season","priority","effort_min","notes","active","sort_key","plan_text","plan_date","source","history","supplies"]
     for t in seed["tasks"]:
         out.append(f"insert into public.tasks (owner_id,{','.join(cols)}) select id,{','.join(q(t[c]) for c in cols)} from _me;")
     for c in seed["completions"]:

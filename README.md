@@ -6,7 +6,11 @@ seasons, the 300-minute weekend cap) – tested against the workbook recalculate
 
 * **This weekend** – laundry routine at the top, then the capped list (Safety → Hygiene → Nice-to-have),
   planned catch-up/one-offs, Monday admin, carry over. Tap ✓ = done today; long-press or ⋯ = pick a date; Undo.
-* **All tasks** – grouped by room with status and priority chips (read-only for now).
+* **All tasks** – grouped by room or priority, filter All / To do / Done; **+ Add task**, ⚙ settings; retired tasks at the bottom.
+* **Task sheet** – tap a task's name anywhere: room, frequency, effort, priority, season, next due, last few completions,
+  *How to* notes, supplies; **✓ Done today**, **Not this weekend** (snooze), **✎ Edit** (add / edit / retire via the *Active* toggle).
+* **Away mode** – ⚙ (header button or All tasks) → *Away* from–to. Banner *Away dd/mm–dd/mm – tasks shifted* with Delete.
+* **You'll need** – collapsible line on This weekend: unique supplies of the capped + planned tasks.
 * **Catch-up** – Fri 23 – Tue 27 Oct with ticks (hidden two weeks after the catch-up).
 * Add to home screen (PWA). No build step: plain HTML/CSS/JS.
 
@@ -18,12 +22,13 @@ seasons, the 300-minute weekend cap) – tested against the workbook recalculate
 | `src/data.js` | data layer: `MockBackend` (localStorage, seeded from `data/seed.json`) and `SupabaseBackend` (supabase-js via CDN, magic link) |
 | `config.js` | Supabase URL + anon key (placeholders = local mock) |
 | `manifest.webmanifest`, `sw.js`, `icons/` | PWA |
-| `supabase/schema.sql` | tables `tasks`, `completions`, `catchup_items`, `settings` + row-level security |
+| `supabase/schema.sql` | tables `tasks`, `completions`, `catchup_items`, `settings`, `away_periods` + row-level security (fresh installs) |
+| `supabase/migrations/002_features.sql` | v7 upgrade for an existing database: `tasks.snooze_until`, `tasks.supplies`, `away_periods`, supplies for obvious tasks (idempotent) |
 | `supabase/seed.sql`, `data/seed.json` | your 123 tasks, Done log and catch-up plan (generated) |
 | `scripts/export_seed.py` | regenerate the seed from the workbook |
 | `scripts/make_truth.py` | LibreOffice ground truth for the tests |
 | `scripts/assistant_cli/cli.mjs` | helper for the assistant (REST + service key, or a mock file) |
-| `tests/` | `node --test tests/` (schedule parity + CLI), `tests/smoke_ui.py` (headless browser) |
+| `tests/` | `node --test tests/` (schedule parity, snooze/away, CLI), `tests/smoke_ui.py` + `tests/smoke_features.py` (headless browser) |
 
 ## Run locally
 ```bash
@@ -55,6 +60,10 @@ python3 scripts/make_truth.py    # re-create ground truth after changing the wor
 2. In Supabase **SQL Editor**, open `supabase/seed.sql`, replace `YOUR_EMAIL` with the address you just used → **Run**.
 3. Reload the app: your 123 tasks appear. **Share → Add to Home Screen** (iPhone Safari) or **⋮ → Install app** (Android Chrome).
 
+### Upgrading an existing database to v7
+In Supabase **SQL Editor → New query**: paste all of `supabase/migrations/002_features.sql` → **Run** (safe to run twice).
+Until it is run the app still works: away dates count as none, and saving snooze/supplies says it needs the update.
+
 ### 4. Let the assistant read/write (optional)
 Give the assistant the Project URL and the `service_role` key as environment variables (not in chat history if you can avoid it):
 ```bash
@@ -62,6 +71,8 @@ export SUPABASE_URL=https://xxxx.supabase.co SUPABASE_SERVICE_KEY=...   # servic
 node scripts/assistant_cli/cli.mjs weekend            # what's on this weekend
 node scripts/assistant_cli/cli.mjs done "hood" "kitchen mop floor" --date 2026-10-24
 node scripts/assistant_cli/cli.mjs undo "hood"
+node scripts/assistant_cli/cli.mjs snooze "hood"          # not this weekend (or --date YYYY-MM-DD -> that week's Saturday); unsnooze "hood"
+node scripts/assistant_cli/cli.mjs away add 2026-12-19 2027-01-03    # away list | away rm ID
 node scripts/assistant_cli/cli.mjs export chores.xlsx
 # offline / testing: add --mock /tmp/chores.json instead of the env vars
 ```
@@ -76,3 +87,13 @@ node scripts/assistant_cli/cli.mjs export chores.xlsx
 * **Status**: Overdue / Due today / Due by Sunday / OK / Paused (winter) / Daily habit.
 * **This weekend**: everything due by Sunday. Weekly laundry = *Routine* and Admin = *Weekday*, both outside the cap; planned (never-done)
   tasks are listed separately; the rest fill 300 minutes in priority order, the remainder is *Carry over*.
+
+## Added in v7 (not in the workbook – only active when set, so parity is unchanged)
+* **Not this weekend** (`tasks.snooze_until`): while today < snooze date, Next due = the later of the normal date and the snooze
+  date, so the task is never *Overdue* and drops out of this weekend (its minutes free up the cap for carry-over). On the snooze
+  Saturday it is back with its real status and competes in the cap as usual. Marking it done (app or assistant) clears the snooze.
+* **Away mode** (`away_periods`): a Next due that falls inside an away period which started after the task was last done moves later
+  by the trip length (end − start + 1 days), snaps to Saturday (or its due weekday) and always lands after the trip. Tasks already
+  due/overdue before you leave are not moved – they are the backlog you left. Several trips apply in date order. Daily habits are
+  never shifted. Snooze is applied after away mode.
+* **Supplies** (`tasks.supplies`, comma-separated): shown in the task sheet, on This weekend (*You'll need*) and in `cli.mjs weekend`.

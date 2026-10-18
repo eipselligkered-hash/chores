@@ -24,6 +24,8 @@ create table if not exists public.tasks (
   plan_date       date,
   source          text,
   history         text,
+  supplies        text,                          -- "You'll need" (comma-separated)
+  snooze_until    date,                          -- 'Not this weekend': next due >= this date while today < it
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now(),
   unique (owner_id, room, name)
@@ -54,6 +56,17 @@ create table if not exists public.catchup_items (
   done_on     date                               -- ticked
 );
 
+-- Away mode: tasks due while away move later by the length of the trip (see src/schedule.js applyAway)
+create table if not exists public.away_periods (
+  id          uuid primary key default gen_random_uuid(),
+  owner_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  start_date  date not null,
+  end_date    date not null,
+  created_at  timestamptz not null default now(),
+  constraint away_periods_dates check (end_date >= start_date)
+);
+create index if not exists away_periods_owner_idx on public.away_periods (owner_id, start_date);
+
 create table if not exists public.settings (
   owner_id    uuid primary key default auth.uid() references auth.users(id) on delete cascade,
   cap_min     int not null default 300
@@ -64,11 +77,12 @@ alter table public.tasks         enable row level security;
 alter table public.completions   enable row level security;
 alter table public.catchup_items enable row level security;
 alter table public.settings      enable row level security;
+alter table public.away_periods  enable row level security;
 
 do $$
 declare t text;
 begin
-  foreach t in array array['tasks','completions','catchup_items','settings'] loop
+  foreach t in array array['tasks','completions','catchup_items','settings','away_periods'] loop
     execute format('drop policy if exists "owner select" on public.%I', t);
     execute format('drop policy if exists "owner insert" on public.%I', t);
     execute format('drop policy if exists "owner update" on public.%I', t);
@@ -101,3 +115,10 @@ create trigger tasks_touch before update on public.tasks for each row execute fu
 do $$ begin
   alter publication supabase_realtime add table public.completions, public.tasks, public.catchup_items;
 exception when others then null; end $$;
+do $$ begin
+  alter publication supabase_realtime add table public.away_periods;
+exception when others then null; end $$;
+
+grant select, insert, update, delete on public.away_periods to authenticated;
+grant all on public.away_periods to service_role;
+revoke all on public.away_periods from anon;

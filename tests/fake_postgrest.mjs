@@ -1,4 +1,4 @@
-// Minimal stand-in for Supabase's PostgREST (just what the CLI uses): GET with select/eq/order, POST insert, DELETE ?id=eq.
+// Minimal stand-in for Supabase's PostgREST (just what the CLI uses): GET with select/eq/order, POST insert, PATCH/DELETE ?id=eq.
 import http from 'node:http';
 export function startFake(db, key = 'test-service-key') {
   const log = [];
@@ -20,6 +20,7 @@ export function startFake(db, key = 'test-service-key') {
       table.push(...rows); res.writeHead(201, { 'Content-Type': 'application/json' });
       return res.end(req.headers.prefer?.includes('return=representation') ? JSON.stringify(rows) : '');
     }
+    if (req.method === 'PATCH') { const patch = JSON.parse(body); table.filter(pass).forEach((r) => Object.assign(r, patch)); res.writeHead(204); return res.end(); }
     if (req.method === 'DELETE') { db[m[1]] = table.filter((r) => !pass(r)); res.writeHead(204); return res.end(); }
     res.writeHead(405); res.end();
   });

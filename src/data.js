@@ -1,8 +1,9 @@
 // Data layer with two interchangeable backends:
 //   MockBackend      - localStorage, seeded from data/seed.json (works offline, no account)
 //   SupabaseBackend  - supabase-js v2 from a CDN, email magic-link auth, RLS-protected tables
-// Both expose: init(), user, signIn(email), signOut(), load(), addCompletion(taskId, doneOn, source),
-//              removeCompletion(id), setCatchupDone(id, doneOn|null), onChange(cb)
+// Both expose: init(), user, signIn(email), signOut(), load() -> {tasks, completions, catchup, settings, away},
+//              addCompletion(taskId, doneOn, source), removeCompletion(id), setCatchupDone(id, doneOn|null),
+//              addTask(task), updateTask(id, patch), addAway(start, end), removeAway(id), onChange(cb)
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2));
 
 export class MockBackend {
@@ -12,9 +13,10 @@ export class MockBackend {
     if (raw) this.db = JSON.parse(raw);
     else {
       const seed = await (await fetch(new URL('../data/seed.json', import.meta.url))).json();
-      this.db = { tasks: seed.tasks, completions: seed.completions, catchup: seed.catchup, settings: { cap_min: seed.cap_min } };
+      this.db = { tasks: seed.tasks, completions: seed.completions, catchup: seed.catchup, settings: { cap_min: seed.cap_min }, away: [] };
       this.save();
     }
+    this.db.away ||= [];
     window.addEventListener('storage', (e) => { if (e.key === this.key) { this.db = JSON.parse(e.newValue); this.cbs.forEach((f) => f()); } });
     return true;
   }
@@ -27,6 +29,17 @@ export class MockBackend {
   }
   async removeCompletion(id) { this.db.completions = this.db.completions.filter((c) => c.id !== id); this.save(); }
   async setCatchupDone(id, done_on) { const i = this.db.catchup.find((x) => x.id === id); if (i) i.done_on = done_on; this.save(); }
+  async addTask(task) {
+    if (this.db.tasks.some((t) => t.room === task.room && t.name === task.name)) throw new Error(`There is already a task “${task.name}” in ${task.room}.`);
+    const t = { id: uid(), active: true, created_at: new Date().toISOString(), ...task }; this.db.tasks.push(t); this.save(); return t;
+  }
+  async updateTask(id, patch) {
+    const t = this.db.tasks.find((x) => x.id === id); if (!t) throw new Error('Task not found');
+    if ((patch.room || patch.name) && this.db.tasks.some((x) => x.id !== id && x.room === (patch.room ?? t.room) && x.name === (patch.name ?? t.name))) throw new Error('Another task in that room already has that name.');
+    Object.assign(t, patch, { updated_at: new Date().toISOString() }); this.save(); return t;
+  }
+  async addAway(start_date, end_date) { const a = { id: uid(), start_date, end_date, created_at: new Date().toISOString() }; this.db.away.push(a); this.save(); return a; }
+  async removeAway(id) { this.db.away = this.db.away.filter((a) => a.id !== id); this.save(); }
   onChange(cb) { this.cbs.push(cb); }
   reset() { localStorage.removeItem(this.key); }
 }
@@ -61,8 +74,30 @@ export class SupabaseBackend {
       this.q(this.sb.from('catchup_items').select('*').order('position')),
       this.q(this.sb.from('settings').select('*').maybeSingle()),
     ]);
-    return { tasks, completions, catchup, settings: settings || {} };
+    // away_periods arrives with migration 002 - until it is applied, treat as "not away"
+    const away = await this.q(this.sb.from('away_periods').select('*').order('start_date')).catch(() => []);
+    return { tasks, completions, catchup, settings: settings || {}, away };
   }
+  // columns added by migration 002; if it isn't applied yet, retry without them so the rest still saves
+  async withNewCols(row, fn) {
+    try { return await this.q(fn(row)); } catch (err) {
+      const missing = /snooze_until|supplies/.test(err.message || '') && /column|schema cache/i.test(err.message || '');
+      if (!missing) throw /duplicate key|unique/i.test(err.message || '') ? new Error('Another task in that room already has that name.') : err;
+      const { snooze_until, supplies, ...rest } = row;
+      if (!Object.keys(rest).length) throw new Error('This needs the database update (supabase/migrations/002_features.sql).');
+      return this.q(fn(rest));
+    }
+  }
+  async addTask(task) {
+    const row = { id: crypto.randomUUID(), owner_id: this.user?.id, active: true, ...task };
+    return this.withNewCols(row, (r) => this.sb.from('tasks').insert(r).select().single());
+  }
+  async updateTask(id, patch) { return this.withNewCols(patch, (r) => this.sb.from('tasks').update(r).eq('id', id).select().single()); }
+  async addAway(start_date, end_date) {
+    try { return await this.q(this.sb.from('away_periods').insert({ owner_id: this.user?.id, start_date, end_date }).select().single()); }
+    catch (err) { throw /away_periods|schema cache|relation/i.test(err.message || '') ? new Error('Away mode needs the database update (supabase/migrations/002_features.sql).') : err; }
+  }
+  async removeAway(id) { await this.q(this.sb.from('away_periods').delete().eq('id', id)); }
   async addCompletion(task_id, done_on, source = 'app', note = null) {
     return this.q(this.sb.from('completions').insert({ task_id, done_on, source, note }).select().single());
   }

@@ -50,8 +50,35 @@ export function effectiveLast(task, completions = []) {
   return e || null;
 }
 
-/** Next due, status, plan label etc. for one task. completions: [{task_id, done_on}], today: ISO date. */
-export function computeTask(task, completions, todayIso) {
+/** Nearest target weekday (Saturday unless due_weekday overrides it), but never back onto/before Last done E. */
+function snap(task, S, E) {
+  const tgt = task.due_weekday && WEEKDAYS.includes(task.due_weekday) ? WEEKDAYS.indexOf(task.due_weekday) + 1 : 7;
+  const fwd = mod(tgt - weekday(S), 7);
+  return (fwd <= 3 || (E != null && S + fwd - 7 <= E)) ? S + fwd : S + fwd - 7;
+}
+
+/** Away mode (not in the workbook). For each away period {start_date, end_date} that started after the task was last
+ *  done (or the task was never done), a next due that falls inside the period moves later by the period's length
+ *  (end - start + 1 days), snaps to the target weekday again and always ends up after the period. Tasks that were
+ *  already due/overdue before you left are not moved: they are the backlog you left and are still there when you're
+ *  back - but nothing new piles on top. Periods are applied in date order (a shifted date can be shifted by the next
+ *  trip). Daily habits are never shifted. */
+export function applyAway(task, C, E, away = []) {
+  if (C == null || !away.length || task.frequency === 'Daily') return C;
+  const ps = away.map((a) => [toDay(a.start_date), toDay(a.end_date)]).filter(([s, e]) => s != null && e != null && e >= s).sort((a, b) => a[0] - b[0]);
+  for (const [s, e] of ps) {
+    if ((E != null && s <= E) || C < s || C > e) continue;
+    let n = snap(task, C + (e - s + 1), E);
+    if (n <= e) n += 7;
+    C = n;
+  }
+  return C;
+}
+
+/** Next due, status, plan label etc. for one task. completions: [{task_id, done_on}], today: ISO date.
+ *  opts.away: away periods [{start_date, end_date}]. task.snooze_until ('Not this weekend'): while today < snooze_until
+ *  the next due is at least snooze_until. Both only change anything when set, so workbook parity is untouched. */
+export function computeTask(task, completions, todayIso, { away = [] } = {}) {
   const today = toDay(todayIso);
   const [P, MO] = FREQUENCIES[task.frequency] || [task.interval_days, task.interval_months || 0];
   const daily = task.frequency === 'Daily';
@@ -62,12 +89,7 @@ export function computeTask(task, completions, todayIso) {
   if (E == null) C = K;                                   // never done: Planned date (or nothing)
   else {
     S = MO > 0 ? edate(E, MO) : E + P;                    // raw due: calendar months, else days
-    if (daily) T = S;
-    else {                                                // snap to the target weekday (Sat unless overridden)
-      const tgt = task.due_weekday && WEEKDAYS.includes(task.due_weekday) ? WEEKDAYS.indexOf(task.due_weekday) + 1 : 7;
-      const fwd = mod(tgt - weekday(S), 7);
-      T = (fwd <= 3 || S + fwd - 7 <= E) ? S + fwd : S + fwd - 7;   // nearest, but never back onto/before Last done
-    }
+    T = daily ? S : snap(task, S, E);                     // snap to the target weekday (Sat unless overridden)
     if (season && season.type === 'Fixed') {
       const ref = E + 60; const a = seasonRule(year(ref), season);
       U = a >= ref ? a : seasonRule(year(ref) + 1, season);
@@ -78,6 +100,12 @@ export function computeTask(task, completions, todayIso) {
     // one-off stagger: used while not yet done near it and the normal date is within half an interval of it
     C = (Lst != null && E < Lst - P / 2 && Math.abs(U - Lst) <= P / 2) ? Lst : U;
   }
+  const base = C;
+  C = applyAway(task, C, E, away);
+  const shifted = base != null && C !== base;
+  const Z = toDay(task.snooze_until);
+  const snoozed = Z != null && today < Z && task.frequency !== 'Daily';
+  if (snoozed) C = C == null ? Z : Math.max(C, Z);
   const left = C == null ? null : C - today;
   const paused = !!(season && season.type === 'Window' && (month(today) < season.start || month(today) > season.end));
   let status;
@@ -94,18 +122,32 @@ export function computeTask(task, completions, todayIso) {
   else if (pdate != null && C === pdate) plan = task.plan_text || '';
   else if (Lst != null && C === Lst) plan = 'Staggered (one-off move to spread busy weekends)';
   return { id: task.id, task, next_due: fromDay(C), status, days_left: left, last_effective: fromDay(E), plan,
-           staggered: Lst != null && C === Lst, planned_pending: K != null && E == null };
+           staggered: Lst != null && C === Lst, planned_pending: K != null && E == null,
+           snoozed_until: snoozed ? fromDay(Z) : null, away_shifted: shifted, due_before: (shifted || snoozed) ? fromDay(base) : null };
 }
 
-export const computeAll = (tasks, completions, todayIso) =>
-  tasks.filter((t) => t.active !== false).map((t) => computeTask(t, completions, todayIso));
+export const computeAll = (tasks, completions, todayIso, opts = {}) =>
+  tasks.filter((t) => t.active !== false).map((t) => computeTask(t, completions, todayIso, opts));
+
+/** 'Not this weekend': the Saturday after the coming/current weekend. */
+export const nextWeekendSat = (todayIso) => fromDay(toDay(weekEndFor(todayIso)) + 6);
+/** Saturday on/after a date. */
+export const saturdayOnOrAfter = (iso) => { const n = toDay(iso); return fromDay(n + mod(7 - weekday(n), 7)); };
+/** Unique supplies (split on , or ;) of a list of tasks, first spelling wins. */
+export function uniqueSupplies(tasks) {
+  const seen = new Map();
+  for (const t of tasks) for (const x of String(t?.supplies || '').split(/[;,]/)) { const v = x.trim(); if (v && !seen.has(v.toLowerCase())) seen.set(v.toLowerCase(), v); }
+  return [...seen.values()];
+}
+/** Away periods that are on now or still to come. */
+export const currentAway = (away = [], todayIso) => away.filter((a) => a.end_date >= todayIso).sort((a, b) => a.start_date.localeCompare(b.start_date));
 
 /** This Weekend (workbook sheet): everything due on/before weekEnd (Sunday), ranked and fitted into the cap.
  *  bucket: 'Routine' (weekly laundry) | 'Weekday' (due-weekday override, e.g. Admin Mon) | 'This weekend' | 'Carry over' | 'Planned'. */
-export function thisWeekend(tasks, completions, todayIso, { cap = DEFAULT_CAP, weekEnd = null } = {}) {
+export function thisWeekend(tasks, completions, todayIso, { cap = DEFAULT_CAP, weekEnd = null, away = [] } = {}) {
   const WE = toDay(weekEnd || weekEndFor(todayIso));
   const rows = [];
-  for (const r of computeAll(tasks, completions, todayIso)) {
+  for (const r of computeAll(tasks, completions, todayIso, { away })) {
     const t = r.task, C = toDay(r.next_due);
     if (C == null || t.frequency === 'Daily' || r.status === 'Paused (winter)' || C > WE) continue;
     const routine = t.room === 'Laundry' && t.frequency === 'Weekly';
