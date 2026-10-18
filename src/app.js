@@ -1,5 +1,5 @@
-import { computeAll, thisWeekend, weekEndFor, fmtDate, addDays, toDay } from './schedule.js';
-import { makeBackend } from './data.js';
+import { computeAll, thisWeekend, weekEndFor, fmtDate, addDays, toDay } from './schedule.js?v=4';
+import { makeBackend } from './data.js?v=4';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
