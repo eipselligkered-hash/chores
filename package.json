@@ -1,0 +1,11 @@
+{
+  "name": "chores-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/",
+    "truth": "python3 scripts/make_truth.py",
+    "seed": "python3 scripts/export_seed.py",
+    "serve": "python3 -m http.server 8080"
+  }
+}

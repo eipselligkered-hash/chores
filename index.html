@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en-IE">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2f6f5e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Chores">
+  <title>Chores</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>Chores</h1>
+      <div class="sub" id="today"></div>
+    </div>
+    <button class="ghost" id="account" aria-label="Account"></button>
+  </header>
+  <main id="view" aria-live="polite"><p class="empty">Loading…</p></main>
+  <nav class="tabs" role="tablist">
+    <button data-tab="weekend" role="tab"><span class="ico">🧺</span>This weekend</button>
+    <button data-tab="all" role="tab"><span class="ico">📋</span>All tasks</button>
+    <button data-tab="catchup" role="tab" id="tab-catchup"><span class="ico">✅</span>Catch-up</button>
+  </nav>
+  <div id="toast" class="toast" hidden></div>
+  <dialog id="sheet" class="sheet">
+    <form method="dialog">
+      <h2 id="sheet-title">Done on…</h2>
+      <p class="muted" id="sheet-task"></p>
+      <label class="field">Date <input type="date" id="sheet-date" required></label>
+      <div class="row-btns">
+        <button value="cancel" class="ghost">Cancel</button>
+        <button value="ok" class="primary" id="sheet-ok">Mark done</button>
+      </div>
+    </form>
+  </dialog>
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>

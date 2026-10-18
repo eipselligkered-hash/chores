@@ -1,0 +1,28 @@
+[
+ {"id": "s0_today", "today": "2026-10-18", "log": []},
+ {"id": "s1_wed_before_catchup", "today": "2026-10-21", "log": []},
+ {"id": "s2_sat_24oct", "today": "2026-10-24", "log": [
+   ["2026-10-23", "General: Test smoke/gas detectors & purifier CO alarms (x2)"],
+   ["2026-10-23", "Kitchen: Clean hood above stove"],
+   ["2026-10-23", "Kitchen: Organise & wipe cupboards"]]},
+ {"id": "s3_after_catchup", "today": "2026-10-28", "log": [
+   ["2026-10-23", "General: Test smoke/gas detectors & purifier CO alarms (x2)"],
+   ["2026-10-23", "Kitchen: Clean hood above stove"],
+   ["2026-10-23", "Kitchen: Organise & wipe cupboards"],
+   ["2026-10-23", "Kitchen: Descale kettle & coffee maker"],
+   ["2026-10-24", "General: Vacuum house"],
+   ["2026-10-24", "Laundry: Wash & dry towels"],
+   ["2026-10-25", "Bathroom: Tiles - Descale & check bath/shower sealant"],
+   ["2026-10-25", "Bathroom: Clean mirrors"],
+   ["2026-10-26", "Office: Admin: bills, filing papers & inbox zero"],
+   ["2026-10-26", "Kitchen: Sharpen knives"],
+   ["2026-10-27", "General: Clean walls (all rooms)"],
+   ["2026-10-29", "Kitchen: Clean oven"]]},
+ {"id": "s4_nov_nothing_done", "today": "2026-11-06", "log": []},
+ {"id": "s5_jan_sunday", "today": "2027-01-03", "log": [
+   ["2026-10-24", "General: Vacuum house"], ["2026-11-02", "Kitchen: Clean oven"], ["2026-12-30", "Office: Admin: bills, filing papers & inbox zero"]]},
+ {"id": "s6_april_window", "today": "2027-04-01", "log": [
+   ["2026-10-24", "Balcony: Store away garden furniture (clocks go back)"],
+   ["2026-10-25", "Laundry: October: dryclean winter clothes & put away summer clothes"]]},
+ {"id": "s7_march_paused", "today": "2027-03-26", "log": []}
+]

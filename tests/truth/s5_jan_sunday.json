@@ -1,0 +1,1819 @@
+{
+ "id": "s5_jan_sunday",
+ "today": "2027-01-03",
+ "week_end": "2027-01-03",
+ "cap": 300,
+ "errors": 0,
+ "tasks": [
+  {
+   "room": "Kitchen",
+   "name": "Take out garbage",
+   "next_due": "2026-10-18",
+   "status": "Daily habit",
+   "last_effective": "2026-10-17",
+   "plan": ""
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean behind microwave and toaster",
+   "next_due": "2026-10-23",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Fri 23 Oct"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean hood above stove",
+   "next_due": "2026-10-23",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Fri 23 Oct"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean toaster",
+   "next_due": "2026-10-23",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Fri 23 Oct"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean trash can",
+   "next_due": "2026-10-23",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Fri 23 Oct"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Descale kettle & coffee maker",
+   "next_due": "2026-10-23",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Fri 23 Oct"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Dishwasher: clean, salt & rinse aid",
+   "next_due": "2026-10-23",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Fri 23 Oct"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Organise & wipe cupboards",
+   "next_due": "2026-10-23",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Fri 23 Oct"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean microwave",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-09-24",
+   "plan": ""
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean sink",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-17",
+   "plan": "Weekend routine Sat 24 Oct"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean stove top",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-17",
+   "plan": "Weekend routine Sat 24 Oct"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Mop floor",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-17",
+   "plan": "Weekend routine Sat 24 Oct"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Organise fridge",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-17",
+   "plan": ""
+  },
+  {
+   "room": "Kitchen",
+   "name": "Wipe counters",
+   "next_due": "2026-10-24",
+   "status": "Daily habit",
+   "last_effective": null,
+   "plan": ""
+  },
+  {
+   "room": "Kitchen",
+   "name": "Organise & wipe drawers",
+   "next_due": "2026-10-26",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Mon 26 Oct"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Sharpen knives",
+   "next_due": "2026-10-26",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Mon 26 Oct"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean behind/around washing machine & dishwasher (where accessible)",
+   "next_due": "2026-10-31",
+   "status": "Overdue",
+   "last_effective": "2025-11-07",
+   "plan": "Staggered (was 07 Nov)"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean kitchen cabinet fronts",
+   "next_due": "2026-10-31",
+   "status": "Overdue",
+   "last_effective": "2026-09-12",
+   "plan": "Staggered (was 12 Dec)"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Replace Scrub Daddy sponge",
+   "next_due": "2026-11-07",
+   "status": "Overdue",
+   "last_effective": "2026-09-07",
+   "plan": ""
+  },
+  {
+   "room": "Kitchen",
+   "name": "Organise freezer",
+   "next_due": "2026-11-21",
+   "status": "Overdue",
+   "last_effective": "2026-10-07",
+   "plan": "Staggered (was 07 Nov)"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean oven",
+   "next_due": "2027-05-01",
+   "status": "OK",
+   "last_effective": "2026-11-02",
+   "plan": ""
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean fridge",
+   "next_due": "2027-01-09",
+   "status": "OK",
+   "last_effective": "2026-10-11",
+   "plan": ""
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean freezer",
+   "next_due": "2027-06-19",
+   "status": "OK",
+   "last_effective": "2026-06-19",
+   "plan": ""
+  },
+  {
+   "room": "Living/Dining",
+   "name": "Wipe electronics",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-09-24",
+   "plan": "Weekend routine Sat 24 Oct"
+  },
+  {
+   "room": "Living/Dining",
+   "name": "Wash chairs",
+   "next_due": "2026-10-27",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Tue 27 Oct"
+  },
+  {
+   "room": "Living/Dining",
+   "name": "Dust (thorough)",
+   "next_due": "2026-10-31",
+   "status": "Overdue",
+   "last_effective": "2026-09-30",
+   "plan": ""
+  },
+  {
+   "room": "Living/Dining",
+   "name": "Vacuum pillows",
+   "next_due": "2026-10-31",
+   "status": "Overdue",
+   "last_effective": "2026-09-30",
+   "plan": ""
+  },
+  {
+   "room": "Living/Dining",
+   "name": "Declutter/Discard",
+   "next_due": "2026-11-14",
+   "status": "Overdue",
+   "last_effective": "2026-05-21",
+   "plan": "Staggered (was 21 Nov)"
+  },
+  {
+   "room": "Living/Dining",
+   "name": "Clean shelves & cabinets",
+   "next_due": "2027-01-02",
+   "status": "Overdue",
+   "last_effective": "2026-05-21",
+   "plan": "Staggered (was 21 Nov)"
+  },
+  {
+   "room": "Bedroom",
+   "name": "Clean bedside tables",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-09-24",
+   "plan": ""
+  },
+  {
+   "room": "Bedroom",
+   "name": "Clean closet doors",
+   "next_due": "2026-10-27",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Tue 27 Oct"
+  },
+  {
+   "room": "Bedroom",
+   "name": "Organise & clean closet",
+   "next_due": "2026-10-27",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Tue 27 Oct"
+  },
+  {
+   "room": "Bedroom",
+   "name": "Dust (thorough)",
+   "next_due": "2026-10-31",
+   "status": "Overdue",
+   "last_effective": "2026-09-30",
+   "plan": ""
+  },
+  {
+   "room": "Bedroom",
+   "name": "Clean under bed",
+   "next_due": "2027-01-09",
+   "status": "OK",
+   "last_effective": "2026-10-12",
+   "plan": "Staggered (was 12 Dec)"
+  },
+  {
+   "room": "Office",
+   "name": "Admin: bills, filing papers & inbox zero",
+   "next_due": "2027-01-04",
+   "status": "OK",
+   "last_effective": "2026-12-30",
+   "plan": "Weekday (Mon evening) - outside weekend cap"
+  },
+  {
+   "room": "Office",
+   "name": "Clean/disinfect hardware",
+   "next_due": "2026-10-27",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Tue 27 Oct"
+  },
+  {
+   "room": "Office",
+   "name": "Dust (thorough)",
+   "next_due": "2026-10-31",
+   "status": "Overdue",
+   "last_effective": "2026-09-30",
+   "plan": ""
+  },
+  {
+   "room": "Office",
+   "name": "Shred papers",
+   "next_due": "2026-11-07",
+   "status": "Overdue",
+   "last_effective": "2026-10-07",
+   "plan": ""
+  },
+  {
+   "room": "Bathroom",
+   "name": "Clean sink",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-17",
+   "plan": "Weekend routine Sat 24 Oct"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Clean toilet",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-17",
+   "plan": "Weekend routine Sat 24 Oct"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Mop & disinfect floor",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-10",
+   "plan": "Weekend routine Sat 24 Oct"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Clean drains",
+   "next_due": "2026-10-25",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Sun 25 Oct"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Clean mirrors",
+   "next_due": "2026-10-25",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Sun 25 Oct"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Dust",
+   "next_due": "2026-10-25",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Sun 25 Oct"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Shower - Clean fittings",
+   "next_due": "2026-10-25",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Sun 25 Oct"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Shower - Clean glass",
+   "next_due": "2026-10-25",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Sun 25 Oct"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Tiles - Descale & check bath/shower sealant",
+   "next_due": "2026-10-25",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Sun 25 Oct"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Tiles - Mold prevention",
+   "next_due": "2026-10-25",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Sun 25 Oct"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Change bath mat",
+   "next_due": "2026-10-31",
+   "status": "Overdue",
+   "last_effective": "2026-10-17",
+   "plan": ""
+  },
+  {
+   "room": "Bathroom",
+   "name": "Clean bins (bathroom & ensuite)",
+   "next_due": "2026-11-07",
+   "status": "Overdue",
+   "last_effective": "2026-08-07",
+   "plan": ""
+  },
+  {
+   "room": "Bathroom",
+   "name": "Clean extractor fans (bathroom & ensuite)",
+   "next_due": "2026-11-14",
+   "status": "Overdue",
+   "last_effective": "2026-08-14",
+   "plan": ""
+  },
+  {
+   "room": "Bathroom",
+   "name": "Change toothbrushes (bathroom & ensuite)",
+   "next_due": "2026-11-28",
+   "status": "Overdue",
+   "last_effective": "2026-08-28",
+   "plan": ""
+  },
+  {
+   "room": "Bathroom",
+   "name": "Clean bathtub",
+   "next_due": "2026-12-12",
+   "status": "Overdue",
+   "last_effective": "2026-09-12",
+   "plan": ""
+  },
+  {
+   "room": "Ensuite",
+   "name": "Change bath mat",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-10",
+   "plan": ""
+  },
+  {
+   "room": "Ensuite",
+   "name": "Clean mirrors",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-09-24",
+   "plan": ""
+  },
+  {
+   "room": "Ensuite",
+   "name": "Clean sink",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-17",
+   "plan": "Weekend routine Sat 24 Oct"
+  },
+  {
+   "room": "Ensuite",
+   "name": "Clean toilet",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-17",
+   "plan": "Weekend routine Sat 24 Oct"
+  },
+  {
+   "room": "Ensuite",
+   "name": "Dust",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-09-24",
+   "plan": ""
+  },
+  {
+   "room": "Ensuite",
+   "name": "Mop & disinfect floor",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-10",
+   "plan": "Weekend routine Sat 24 Oct"
+  },
+  {
+   "room": "Ensuite",
+   "name": "Shower - Clean glass",
+   "next_due": "2026-10-25",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Sun 25 Oct"
+  },
+  {
+   "room": "Ensuite",
+   "name": "Shower - Clean fittings",
+   "next_due": "2026-10-31",
+   "status": "Overdue",
+   "last_effective": "2026-09-30",
+   "plan": ""
+  },
+  {
+   "room": "Ensuite",
+   "name": "Clean drains",
+   "next_due": "2026-12-05",
+   "status": "Overdue",
+   "last_effective": "2026-10-05",
+   "plan": ""
+  },
+  {
+   "room": "Ensuite",
+   "name": "Tiles - Mold prevention",
+   "next_due": "2026-12-05",
+   "status": "Overdue",
+   "last_effective": "2026-10-05",
+   "plan": ""
+  },
+  {
+   "room": "Ensuite",
+   "name": "Tiles - Descale & check bath/shower sealant",
+   "next_due": "2027-01-09",
+   "status": "OK",
+   "last_effective": "2026-10-03",
+   "plan": "Staggered (was 03 Apr)"
+  },
+  {
+   "room": "Entrance",
+   "name": "Organise shoe rack",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-09-24",
+   "plan": "Weekend routine Sat 24 Oct"
+  },
+  {
+   "room": "Entrance",
+   "name": "Clean stairway railing",
+   "next_due": "2026-10-26",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Mon 26 Oct"
+  },
+  {
+   "room": "Entrance",
+   "name": "Dust (thorough)",
+   "next_due": "2026-10-26",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Mon 26 Oct"
+  },
+  {
+   "room": "Entrance",
+   "name": "Mop floor",
+   "next_due": "2026-10-26",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Mon 26 Oct"
+  },
+  {
+   "room": "Entrance",
+   "name": "Vacuum stairway",
+   "next_due": "2026-11-21",
+   "status": "Overdue",
+   "last_effective": "2026-10-07",
+   "plan": "Staggered (was 07 Nov)"
+  },
+  {
+   "room": "Entrance",
+   "name": "Polish shoes",
+   "next_due": "2027-01-16",
+   "status": "OK",
+   "last_effective": "2026-10-16",
+   "plan": "Reset (no catch-up)"
+  },
+  {
+   "room": "Laundry",
+   "name": "Clean dryer",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-09-24",
+   "plan": ""
+  },
+  {
+   "room": "Laundry",
+   "name": "Ironing",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-17",
+   "plan": ""
+  },
+  {
+   "room": "Laundry",
+   "name": "October: dryclean winter clothes & put away summer clothes",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2025-10-25",
+   "plan": ""
+  },
+  {
+   "room": "Laundry",
+   "name": "Put away clothes",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-17",
+   "plan": ""
+  },
+  {
+   "room": "Laundry",
+   "name": "Wash & dry dark clothes",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-17",
+   "plan": ""
+  },
+  {
+   "room": "Laundry",
+   "name": "Wash & dry light clothes",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-17",
+   "plan": ""
+  },
+  {
+   "room": "Laundry",
+   "name": "Wash & dry towels",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-17",
+   "plan": ""
+  },
+  {
+   "room": "Laundry",
+   "name": "Clean washing machine (hot cycle, door seal, detergent drawer, filter)",
+   "next_due": "2026-11-21",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Planned Sat 21 Nov"
+  },
+  {
+   "room": "Laundry",
+   "name": "April: dryclean summer clothes & put away winter clothes",
+   "next_due": "2027-04-10",
+   "status": "OK",
+   "last_effective": "2026-04-11",
+   "plan": ""
+  },
+  {
+   "room": "Attic",
+   "name": "Check mouse traps",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-09-24",
+   "plan": "Weekend routine Sat 24 Oct"
+  },
+  {
+   "room": "Attic",
+   "name": "Organise storage",
+   "next_due": "2027-01-02",
+   "status": "Overdue",
+   "last_effective": "2026-07-09",
+   "plan": "Staggered (was 09 Jan)"
+  },
+  {
+   "room": "General",
+   "name": "Check fire extinguisher (gauge in green, pin & seal intact, accessible)",
+   "next_due": "2026-10-23",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Fri 23 Oct"
+  },
+  {
+   "room": "General",
+   "name": "Smoke detectors: check/replace batteries & check first-aid kit (expiry dates)",
+   "next_due": "2026-10-23",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Fri 23 Oct"
+  },
+  {
+   "room": "General",
+   "name": "Test RCD trip switch (press T on fuse board)",
+   "next_due": "2026-10-23",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Fri 23 Oct"
+  },
+  {
+   "room": "General",
+   "name": "Test smoke/gas detectors & purifier CO alarms (x2)",
+   "next_due": "2026-10-23",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Fri 23 Oct"
+  },
+  {
+   "room": "General",
+   "name": "Change towels (kitchen, bathroom, ensuite)",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-17",
+   "plan": "Weekend routine Sat 24 Oct"
+  },
+  {
+   "room": "General",
+   "name": "Tidy up & quick dust",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-17",
+   "plan": "Weekend routine Sat 24 Oct"
+  },
+  {
+   "room": "General",
+   "name": "Vacuum house",
+   "next_due": "2026-10-31",
+   "status": "Overdue",
+   "last_effective": "2026-10-24",
+   "plan": ""
+  },
+  {
+   "room": "General",
+   "name": "Water plants",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-17",
+   "plan": ""
+  },
+  {
+   "room": "General",
+   "name": "Air purifiers (x2): vacuum filter outer mesh / pre-filter",
+   "next_due": "2026-10-25",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Sun 25 Oct"
+  },
+  {
+   "room": "General",
+   "name": "Mop floors (bedroom, office, living/dining)",
+   "next_due": "2026-10-26",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Mon 26 Oct"
+  },
+  {
+   "room": "General",
+   "name": "Clean walls (all rooms)",
+   "next_due": "2026-10-27",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Fri-Tue 23-27 Oct (split by room, finish Tue 27 Oct)"
+  },
+  {
+   "room": "General",
+   "name": "Clean/dust lights & remove cobwebs",
+   "next_due": "2026-10-27",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Tue 27 Oct"
+  },
+  {
+   "room": "General",
+   "name": "Dust blinds",
+   "next_due": "2026-10-27",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Tue 27 Oct"
+  },
+  {
+   "room": "General",
+   "name": "Sanitise light switches & doorknobs",
+   "next_due": "2026-10-27",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Tue 27 Oct"
+  },
+  {
+   "room": "General",
+   "name": "Air purifiers (x2): replace U97 H-Trifilter (HEPA H13 + carbon)",
+   "next_due": "2026-10-31",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Planned Sat 31 Oct"
+  },
+  {
+   "room": "General",
+   "name": "Clean all doors",
+   "next_due": "2026-11-07",
+   "status": "Overdue",
+   "last_effective": "2026-05-21",
+   "plan": "Staggered (was 21 Nov)"
+  },
+  {
+   "room": "General",
+   "name": "Clean radiators (dust behind & between fins)",
+   "next_due": "2026-11-07",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Planned Sat 07 Nov"
+  },
+  {
+   "room": "General",
+   "name": "Vacuum cleaner: wash filter, empty & clean bin, clear brush roll",
+   "next_due": "2026-11-14",
+   "status": "Overdue",
+   "last_effective": "2026-10-14",
+   "plan": ""
+  },
+  {
+   "room": "General",
+   "name": "Vacuum curtains (living/dining, bedroom, office)",
+   "next_due": "2026-11-14",
+   "status": "Overdue",
+   "last_effective": "2025-11-14",
+   "plan": ""
+  },
+  {
+   "room": "General",
+   "name": "Dust skirting boards & windowsills, wipe window frames/seals & clean trickle vents (all rooms)",
+   "next_due": "2026-12-05",
+   "status": "Overdue",
+   "last_effective": "2026-09-05",
+   "plan": ""
+  },
+  {
+   "room": "General",
+   "name": "Feed plants",
+   "next_due": "2027-04-03",
+   "status": "Paused (winter)",
+   "last_effective": "2026-09-30",
+   "plan": ""
+  },
+  {
+   "room": "Storage room/closet",
+   "name": "Declutter/Discard",
+   "next_due": "2026-10-26",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Mon 26 Oct"
+  },
+  {
+   "room": "Storage room/closet",
+   "name": "Organise storage",
+   "next_due": "2026-10-26",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Mon 26 Oct"
+  },
+  {
+   "room": "Storage room/closet",
+   "name": "Dust (thorough)",
+   "next_due": "2026-10-27",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Tue 27 Oct"
+  },
+  {
+   "room": "Storage room/closet",
+   "name": "Vacuum floor",
+   "next_due": "2026-10-27",
+   "status": "Overdue",
+   "last_effective": null,
+   "plan": "Catch-up Tue 27 Oct"
+  },
+  {
+   "room": "Storage room/closet",
+   "name": "Boiler service",
+   "next_due": "2027-09-11",
+   "status": "OK",
+   "last_effective": null,
+   "plan": "Planned Sat 11 Sep 2027"
+  },
+  {
+   "room": "Storage room/closet",
+   "name": "Check boiler pressure (1–1.5 bar cold) & bleed radiators",
+   "next_due": "2027-10-30",
+   "status": "OK",
+   "last_effective": "2026-10-17",
+   "plan": ""
+  },
+  {
+   "room": "Presses",
+   "name": "Pantry press: empty, clean, organise & check expiry dates",
+   "next_due": "2026-11-07",
+   "status": "Overdue",
+   "last_effective": "2026-05-07",
+   "plan": ""
+  },
+  {
+   "room": "Presses",
+   "name": "Hot press: empty, clean & organise (check cylinder/pipes for leaks)",
+   "next_due": "2026-12-05",
+   "status": "Overdue",
+   "last_effective": "2026-06-05",
+   "plan": ""
+  },
+  {
+   "room": "Presses",
+   "name": "Laundry press: empty, clean & organise",
+   "next_due": "2027-01-02",
+   "status": "Overdue",
+   "last_effective": "2026-07-02",
+   "plan": ""
+  },
+  {
+   "room": "Car",
+   "name": "Clean inside",
+   "next_due": "2026-11-14",
+   "status": "Overdue",
+   "last_effective": "2026-09-30",
+   "plan": "Staggered (was 31 Oct)"
+  },
+  {
+   "room": "Car",
+   "name": "Wash outside",
+   "next_due": "2026-11-21",
+   "status": "Overdue",
+   "last_effective": "2026-10-07",
+   "plan": "Staggered (was 07 Nov)"
+  },
+  {
+   "room": "Balcony",
+   "name": "Store away garden furniture (clocks go back)",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2025-10-25",
+   "plan": ""
+  },
+  {
+   "room": "Balcony",
+   "name": "Bring out garden furniture (clocks go forward)",
+   "next_due": "2027-03-27",
+   "status": "OK",
+   "last_effective": "2026-03-28",
+   "plan": ""
+  },
+  {
+   "room": "Balcony",
+   "name": "Clean garden furniture",
+   "next_due": "2027-04-03",
+   "status": "Paused (winter)",
+   "last_effective": "2026-10-14",
+   "plan": ""
+  },
+  {
+   "room": "Balcony",
+   "name": "Water pots",
+   "next_due": "2027-04-03",
+   "status": "Paused (winter)",
+   "last_effective": "2026-10-17",
+   "plan": ""
+  },
+  {
+   "room": "Balcony",
+   "name": "Weed outdoor pots",
+   "next_due": "2027-04-03",
+   "status": "Paused (winter)",
+   "last_effective": "2026-10-10",
+   "plan": ""
+  },
+  {
+   "room": "House general",
+   "name": "Shake doormats",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-17",
+   "plan": "Weekend routine Sat 24 Oct"
+  },
+  {
+   "room": "House general",
+   "name": "Tidy outdoor entranceway",
+   "next_due": "2026-10-24",
+   "status": "Overdue",
+   "last_effective": "2026-10-10",
+   "plan": ""
+  },
+  {
+   "room": "House general",
+   "name": "Deck maintenance",
+   "next_due": "2027-04-03",
+   "status": "OK",
+   "last_effective": "2026-04-04",
+   "plan": ""
+  },
+  {
+   "room": "House general",
+   "name": "Wash windows (spring)",
+   "next_due": "2027-04-03",
+   "status": "OK",
+   "last_effective": "2026-04-04",
+   "plan": ""
+  },
+  {
+   "room": "House general",
+   "name": "Wash windows (autumn)",
+   "next_due": "2027-09-04",
+   "status": "OK",
+   "last_effective": "2026-09-05",
+   "plan": ""
+  }
+ ],
+ "weekend": [
+  {
+   "room": "Laundry",
+   "name": "Ironing",
+   "plan": "Routine",
+   "effort": 30,
+   "running": 0,
+   "bucket": "Routine"
+  },
+  {
+   "room": "Laundry",
+   "name": "Put away clothes",
+   "plan": "Routine",
+   "effort": 10,
+   "running": 0,
+   "bucket": "Routine"
+  },
+  {
+   "room": "Laundry",
+   "name": "Wash & dry dark clothes",
+   "plan": "Routine",
+   "effort": 10,
+   "running": 0,
+   "bucket": "Routine"
+  },
+  {
+   "room": "Laundry",
+   "name": "Wash & dry light clothes",
+   "plan": "Routine",
+   "effort": 10,
+   "running": 0,
+   "bucket": "Routine"
+  },
+  {
+   "room": "Laundry",
+   "name": "Wash & dry towels",
+   "plan": "Routine",
+   "effort": 10,
+   "running": 0,
+   "bucket": "Routine"
+  },
+  {
+   "room": "Laundry",
+   "name": "Clean dryer",
+   "plan": "",
+   "effort": 5,
+   "running": 5,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean microwave",
+   "plan": "",
+   "effort": 10,
+   "running": 15,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean sink",
+   "plan": "Weekend routine Sat 24 Oct",
+   "effort": 5,
+   "running": 20,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean stove top",
+   "plan": "Weekend routine Sat 24 Oct",
+   "effort": 10,
+   "running": 30,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Mop floor",
+   "plan": "Weekend routine Sat 24 Oct",
+   "effort": 15,
+   "running": 45,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Organise fridge",
+   "plan": "",
+   "effort": 10,
+   "running": 55,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Clean sink",
+   "plan": "Weekend routine Sat 24 Oct",
+   "effort": 5,
+   "running": 60,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Clean toilet",
+   "plan": "Weekend routine Sat 24 Oct",
+   "effort": 10,
+   "running": 70,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Mop & disinfect floor",
+   "plan": "Weekend routine Sat 24 Oct",
+   "effort": 12,
+   "running": 82,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Ensuite",
+   "name": "Change bath mat",
+   "plan": "",
+   "effort": 2,
+   "running": 84,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Ensuite",
+   "name": "Clean sink",
+   "plan": "Weekend routine Sat 24 Oct",
+   "effort": 5,
+   "running": 89,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Ensuite",
+   "name": "Clean toilet",
+   "plan": "Weekend routine Sat 24 Oct",
+   "effort": 10,
+   "running": 99,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Ensuite",
+   "name": "Mop & disinfect floor",
+   "plan": "Weekend routine Sat 24 Oct",
+   "effort": 12,
+   "running": 111,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Attic",
+   "name": "Check mouse traps",
+   "plan": "Weekend routine Sat 24 Oct",
+   "effort": 5,
+   "running": 116,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "General",
+   "name": "Change towels (kitchen, bathroom, ensuite)",
+   "plan": "Weekend routine Sat 24 Oct",
+   "effort": 6,
+   "running": 122,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "General",
+   "name": "Tidy up & quick dust",
+   "plan": "Weekend routine Sat 24 Oct",
+   "effort": 45,
+   "running": 167,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Change bath mat",
+   "plan": "",
+   "effort": 2,
+   "running": 169,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Ensuite",
+   "name": "Shower - Clean fittings",
+   "plan": "",
+   "effort": 10,
+   "running": 179,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "General",
+   "name": "Vacuum house",
+   "plan": "",
+   "effort": 45,
+   "running": 224,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Replace Scrub Daddy sponge",
+   "plan": "",
+   "effort": 2,
+   "running": 226,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Clean bins (bathroom & ensuite)",
+   "plan": "",
+   "effort": 10,
+   "running": 236,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Clean extractor fans (bathroom & ensuite)",
+   "plan": "",
+   "effort": 15,
+   "running": 251,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Change toothbrushes (bathroom & ensuite)",
+   "plan": "",
+   "effort": 4,
+   "running": 255,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Ensuite",
+   "name": "Clean drains",
+   "plan": "",
+   "effort": 10,
+   "running": 265,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Ensuite",
+   "name": "Tiles - Mold prevention",
+   "plan": "",
+   "effort": 15,
+   "running": 280,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Clean bathtub",
+   "plan": "",
+   "effort": 15,
+   "running": 295,
+   "bucket": "This weekend"
+  },
+  {
+   "room": "Living/Dining",
+   "name": "Wipe electronics",
+   "plan": "Weekend routine Sat 24 Oct",
+   "effort": 10,
+   "running": 305,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Bedroom",
+   "name": "Clean bedside tables",
+   "plan": "",
+   "effort": 5,
+   "running": 310,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Ensuite",
+   "name": "Clean mirrors",
+   "plan": "",
+   "effort": 5,
+   "running": 315,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Ensuite",
+   "name": "Dust",
+   "plan": "",
+   "effort": 5,
+   "running": 320,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Entrance",
+   "name": "Organise shoe rack",
+   "plan": "Weekend routine Sat 24 Oct",
+   "effort": 5,
+   "running": 325,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Laundry",
+   "name": "October: dryclean winter clothes & put away summer clothes",
+   "plan": "",
+   "effort": 30,
+   "running": 355,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "General",
+   "name": "Water plants",
+   "plan": "",
+   "effort": 5,
+   "running": 360,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Balcony",
+   "name": "Store away garden furniture (clocks go back)",
+   "plan": "",
+   "effort": 20,
+   "running": 380,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "House general",
+   "name": "Shake doormats",
+   "plan": "Weekend routine Sat 24 Oct",
+   "effort": 5,
+   "running": 385,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "House general",
+   "name": "Tidy outdoor entranceway",
+   "plan": "",
+   "effort": 15,
+   "running": 400,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean behind/around washing machine & dishwasher (where accessible)",
+   "plan": "Staggered (was 07 Nov)",
+   "effort": 30,
+   "running": 430,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean kitchen cabinet fronts",
+   "plan": "Staggered (was 12 Dec)",
+   "effort": 20,
+   "running": 450,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Living/Dining",
+   "name": "Dust (thorough)",
+   "plan": "",
+   "effort": 20,
+   "running": 470,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Living/Dining",
+   "name": "Vacuum pillows",
+   "plan": "",
+   "effort": 10,
+   "running": 480,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Bedroom",
+   "name": "Dust (thorough)",
+   "plan": "",
+   "effort": 20,
+   "running": 500,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Office",
+   "name": "Dust (thorough)",
+   "plan": "",
+   "effort": 20,
+   "running": 520,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Office",
+   "name": "Shred papers",
+   "plan": "",
+   "effort": 10,
+   "running": 530,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "General",
+   "name": "Clean all doors",
+   "plan": "Staggered (was 21 Nov)",
+   "effort": 30,
+   "running": 560,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Presses",
+   "name": "Pantry press: empty, clean, organise & check expiry dates",
+   "plan": "",
+   "effort": 40,
+   "running": 600,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Living/Dining",
+   "name": "Declutter/Discard",
+   "plan": "Staggered (was 21 Nov)",
+   "effort": 60,
+   "running": 660,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "General",
+   "name": "Vacuum cleaner: wash filter, empty & clean bin, clear brush roll",
+   "plan": "",
+   "effort": 15,
+   "running": 675,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "General",
+   "name": "Vacuum curtains (living/dining, bedroom, office)",
+   "plan": "",
+   "effort": 45,
+   "running": 720,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Car",
+   "name": "Clean inside",
+   "plan": "Staggered (was 31 Oct)",
+   "effort": 30,
+   "running": 750,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Organise freezer",
+   "plan": "Staggered (was 07 Nov)",
+   "effort": 15,
+   "running": 765,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Entrance",
+   "name": "Vacuum stairway",
+   "plan": "Staggered (was 07 Nov)",
+   "effort": 10,
+   "running": 775,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Car",
+   "name": "Wash outside",
+   "plan": "Staggered (was 07 Nov)",
+   "effort": 30,
+   "running": 805,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "General",
+   "name": "Dust skirting boards & windowsills, wipe window frames/seals & clean trickle vents (all rooms)",
+   "plan": "",
+   "effort": 60,
+   "running": 865,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Presses",
+   "name": "Hot press: empty, clean & organise (check cylinder/pipes for leaks)",
+   "plan": "",
+   "effort": 30,
+   "running": 895,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Living/Dining",
+   "name": "Clean shelves & cabinets",
+   "plan": "Staggered (was 21 Nov)",
+   "effort": 30,
+   "running": 925,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Attic",
+   "name": "Organise storage",
+   "plan": "Staggered (was 09 Jan)",
+   "effort": 60,
+   "running": 985,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Presses",
+   "name": "Laundry press: empty, clean & organise",
+   "plan": "",
+   "effort": 30,
+   "running": 1015,
+   "bucket": "Carry over"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean behind microwave and toaster",
+   "plan": "Planned",
+   "effort": 15,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean hood above stove",
+   "plan": "Planned",
+   "effort": 30,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean toaster",
+   "plan": "Planned",
+   "effort": 5,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Clean trash can",
+   "plan": "Planned",
+   "effort": 15,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Descale kettle & coffee maker",
+   "plan": "Planned",
+   "effort": 25,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Dishwasher: clean, salt & rinse aid",
+   "plan": "Planned",
+   "effort": 19,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Organise & wipe cupboards",
+   "plan": "Planned",
+   "effort": 60,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "General",
+   "name": "Check fire extinguisher (gauge in green, pin & seal intact, accessible)",
+   "plan": "Planned",
+   "effort": 2,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "General",
+   "name": "Smoke detectors: check/replace batteries & check first-aid kit (expiry dates)",
+   "plan": "Planned",
+   "effort": 10,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "General",
+   "name": "Test RCD trip switch (press T on fuse board)",
+   "plan": "Planned",
+   "effort": 2,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "General",
+   "name": "Test smoke/gas detectors & purifier CO alarms (x2)",
+   "plan": "Planned",
+   "effort": 8,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Clean drains",
+   "plan": "Planned",
+   "effort": 10,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Clean mirrors",
+   "plan": "Planned",
+   "effort": 5,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Dust",
+   "plan": "Planned",
+   "effort": 5,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Shower - Clean fittings",
+   "plan": "Planned",
+   "effort": 10,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Shower - Clean glass",
+   "plan": "Planned",
+   "effort": 15,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Tiles - Descale & check bath/shower sealant",
+   "plan": "Planned",
+   "effort": 35,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Bathroom",
+   "name": "Tiles - Mold prevention",
+   "plan": "Planned",
+   "effort": 15,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Ensuite",
+   "name": "Shower - Clean glass",
+   "plan": "Planned",
+   "effort": 15,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "General",
+   "name": "Air purifiers (x2): vacuum filter outer mesh / pre-filter",
+   "plan": "Planned",
+   "effort": 15,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Organise & wipe drawers",
+   "plan": "Planned",
+   "effort": 30,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Kitchen",
+   "name": "Sharpen knives",
+   "plan": "Planned",
+   "effort": 15,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Entrance",
+   "name": "Clean stairway railing",
+   "plan": "Planned",
+   "effort": 10,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Entrance",
+   "name": "Dust (thorough)",
+   "plan": "Planned",
+   "effort": 10,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Entrance",
+   "name": "Mop floor",
+   "plan": "Planned",
+   "effort": 10,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "General",
+   "name": "Mop floors (bedroom, office, living/dining)",
+   "plan": "Planned",
+   "effort": 30,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Storage room/closet",
+   "name": "Declutter/Discard",
+   "plan": "Planned",
+   "effort": 60,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Storage room/closet",
+   "name": "Organise storage",
+   "plan": "Planned",
+   "effort": 60,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Living/Dining",
+   "name": "Wash chairs",
+   "plan": "Planned",
+   "effort": 30,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Bedroom",
+   "name": "Clean closet doors",
+   "plan": "Planned",
+   "effort": 15,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Bedroom",
+   "name": "Organise & clean closet",
+   "plan": "Planned",
+   "effort": 60,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Office",
+   "name": "Clean/disinfect hardware",
+   "plan": "Planned",
+   "effort": 10,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "General",
+   "name": "Clean walls (all rooms)",
+   "plan": "Planned",
+   "effort": 220,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "General",
+   "name": "Clean/dust lights & remove cobwebs",
+   "plan": "Planned",
+   "effort": 30,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "General",
+   "name": "Dust blinds",
+   "plan": "Planned",
+   "effort": 30,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "General",
+   "name": "Sanitise light switches & doorknobs",
+   "plan": "Planned",
+   "effort": 20,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Storage room/closet",
+   "name": "Dust (thorough)",
+   "plan": "Planned",
+   "effort": 20,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Storage room/closet",
+   "name": "Vacuum floor",
+   "plan": "Planned",
+   "effort": 10,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "General",
+   "name": "Air purifiers (x2): replace U97 H-Trifilter (HEPA H13 + carbon)",
+   "plan": "Planned",
+   "effort": 20,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "General",
+   "name": "Clean radiators (dust behind & between fins)",
+   "plan": "Planned",
+   "effort": 30,
+   "running": 1015,
+   "bucket": "Planned"
+  },
+  {
+   "room": "Laundry",
+   "name": "Clean washing machine (hot cycle, door seal, detergent drawer, filter)",
+   "plan": "Planned",
+   "effort": 15,
+   "running": 1015,
+   "bucket": "Planned"
+  }
+ ]
+}
