@@ -1,8 +1,8 @@
 :root {
-  --bg: #f6f5f1; --card: #fff; --ink: #1f2a27; --muted: #6b7570; --line: #e4e2db;
+  --bg: #f6f5f1; --card: #fff; --ink: #1f2a27; --muted: #5c6661; --line: #e4e2db;
   --brand: #2f6f5e; --brand-soft: #e3f0eb;
   --red: #b42318; --red-soft: #fde8e6; --amber: #8a5a00; --amber-soft: #fff3d6;
-  --green: #1e6b3a; --green-soft: #e4f4e8; --grey: #6b7280; --grey-soft: #eef0f2;
+  --green: #1e6b3a; --green-soft: #e4f4e8; --grey: #575d69; --grey-soft: #eef0f2;
   --blue: #1f4e78; --blue-soft: #e5eef8; --purple: #5b2c6f; --purple-soft: #f0e9f4;
   --r: 14px; --tap: 52px;
 }
@@ -38,7 +38,7 @@ h2.sec small { font-weight: 400; color: var(--muted); font-size: 13px; }
   user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .item:last-child { border-bottom: 0; }
 .item.safety { box-shadow: inset 4px 0 0 var(--red); background: #fffafa; }
-.tick { flex: none; width: var(--tap); height: var(--tap); border-radius: 50%; border: 2px solid #b9c3bf; background: #fff; font-size: 22px; color: transparent; display: grid; place-items: center; }
+.tick { flex: none; width: var(--tap); height: var(--tap); border-radius: 50%; border: 2px solid #7f8a85; background: #fff; font-size: 22px; color: transparent; display: grid; place-items: center; }
 .tick:active, .tick.done { background: var(--brand); border-color: var(--brand); color: #fff; }
 .item .body { flex: 1; min-width: 0; }
 .item .name { font-weight: 600; font-size: 15.5px; }
@@ -52,7 +52,7 @@ h2.sec small { font-weight: 400; color: var(--muted); font-size: 13px; }
 .s-OK { background: var(--green-soft); color: var(--green); }
 .s-Paused-winter, .s-Daily-habit, .s-No-date { background: var(--grey-soft); color: var(--grey); }
 .b-Routine { background: var(--purple-soft); color: var(--purple); } .b-Planned { background: var(--blue-soft); color: var(--blue); }
-.carry .item { opacity: .75; }
+.carry .item .name { font-weight: 500; }
 details.room { background: var(--card); border-radius: var(--r); margin-bottom: 10px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
 details.room > summary { list-style: none; padding: 14px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; min-height: var(--tap); }
 details.room > summary::-webkit-details-marker { display: none; }
@@ -96,17 +96,17 @@ details.room .item { min-height: 56px; }
 .sheet-acts { justify-content: stretch; } .sheet-acts button { flex: 1; min-width: 0; }
 .wide { width: 100%; min-height: 48px; margin-top: 10px; }
 .small { font-size: 13px; }
-.link { border: 0; background: none; color: var(--brand); font-weight: 700; padding: 4px 6px; min-height: 32px; font-size: 13px; }
+.link { border: 0; background: none; color: var(--brand); font-weight: 700; padding: 4px 6px; min-height: 44px; font-size: 13px; }
 .chip.snz { background: var(--purple-soft); color: var(--purple); }
 .snz-line { margin-top: 4px; }
-.snz-pick { margin-top: 10px; font-size: 14px; } .snz-pick summary { color: var(--muted); padding: 6px 0; cursor: pointer; }
+.snz-pick { margin-top: 10px; font-size: 14px; } .snz-pick summary { color: var(--muted); padding: 6px 0; cursor: pointer; min-height: 44px; display: flex; align-items: center; }
 .two { display: flex; gap: 10px; align-items: flex-end; } .two > * { flex: 1; min-width: 0; }
 .two input[type=date] { min-height: 48px; font: inherit; padding: 0 10px; border: 1px solid var(--line); border-radius: 12px; width: 100%; }
 .field select, .field textarea { min-height: 50px; font: inherit; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; width: 100%; }
 .field input { width: 100%; }
 .field textarea { resize: vertical; }
 .sheet h3 { font-size: 15px; margin: 18px 0 4px; }
-.adv { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 8px; } .adv summary { font-weight: 600; color: var(--muted); padding: 6px 0; cursor: pointer; }
+.adv { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 8px; } .adv summary { font-weight: 600; color: var(--muted); padding: 6px 0; cursor: pointer; min-height: 44px; display: flex; align-items: center; }
 .toggle { display: flex; gap: 10px; align-items: center; margin: 14px 0; font-weight: 600; } .toggle input { width: 22px; height: 22px; accent-color: var(--brand); }
 .err { color: var(--red); font-weight: 600; }
 .item.slim { min-height: 52px; }
@@ -120,4 +120,19 @@ details.room .item { min-height: 56px; }
 .toolbar { display: flex; gap: 8px; } .toolbar .search { flex: 1; min-width: 0; }
 .toolbar .add { min-height: 48px; padding: 0 12px; white-space: nowrap; font-size: 14px; } .toolbar .gear { min-height: 48px; width: 48px; padding: 0; font-size: 18px; }
 .item .body { cursor: pointer; }
-details.retired .item { opacity: .7; }
+details.retired .item .name { font-weight: 500; color: var(--muted); }
+
+/* v12: collapsible This weekend sections (Planned, Carry over) */
+details.fold > summary.sec { list-style: none; cursor: pointer; min-height: 44px; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; margin: 10px 4px 4px; }
+details.fold > summary.sec small { font-weight: 400; color: var(--muted); font-size: 13px; }
+details.fold[open] > summary.sec { margin-bottom: 8px; }
+details.fold > summary.sec::-webkit-details-marker { display: none; }
+details.fold > summary.sec > span::before { content: '▸ '; color: var(--muted); }
+details.fold[open] > summary.sec > span::before { content: '▾ '; }
+details.fold > summary.sec small { text-align: right; }
+/* v12: connection banner / card */
+.banner.conn { align-items: center; background: var(--amber-soft); color: var(--ink); font-weight: 400; }
+.banner.conn span { font-size: 14px; } .banner.conn a { color: var(--blue); }
+.conn-card p { margin: 0 0 12px; } .conn-card a { color: var(--blue); }
+.toggle { min-height: 44px; }
+#account:empty { display: none; }

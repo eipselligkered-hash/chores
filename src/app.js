@@ -1,6 +1,6 @@
 import { computeAll, computeTask, thisWeekend, weekEndFor, fmtDate, addDays, toDay, FREQUENCIES, SEASONS, PRIORITIES, WEEKDAYS,
-  nextWeekendSat, saturdayOnOrAfter, uniqueSupplies, currentAway, effectiveLast, fromDay, planDone, EFFORT_BUCKETS, effortBucket, byNextDue } from './schedule.js?v=11';
-import { makeBackend } from './data.js?v=11';
+  nextWeekendSat, saturdayOnOrAfter, uniqueSupplies, currentAway, effectiveLast, fromDay, planDone, EFFORT_BUCKETS, effortBucket, byNextDue } from './schedule.js?v=12';
+import { makeBackend } from './data.js?v=12';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -14,8 +14,46 @@ const state = { openRooms: new Set(), group: ['room', 'priority', 'time'].includ
 
 // only the most recent load is shown, so a slow older response can't overwrite newer data
 let loadSeq = 0;
-async function refresh() { const n = ++loadSeq; const db = await be.load(); if (n !== loadSeq) return; state.db = db; render(); }
-const fail = (err) => { console.error(err); toast(`Couldn't save – ${err?.message || err}`); refresh().catch(() => {}); };
+async function refresh() {
+  const n = ++loadSeq; let db;
+  try {
+    if (be.kind !== 'mock' && !navigator.onLine) throw new Error('offline');
+    // a paused/unreachable project or a flaky connection can hang for a long time: give up after 15 s
+    db = await Promise.race([be.load(), new Promise((_, ko) => setTimeout(() => ko(new Error('Timed out reaching the database')), 15000))]);
+  } catch (err) {
+    if (n === loadSeq) { state.conn = connProblem(err); if (state.db) render(); else renderUnreachable(); }
+    throw err;
+  }
+  if (n !== loadSeq) return;
+  state.db = db; state.conn = ''; saveCache(db); render();
+}
+// ---------- connection problems, offline cache
+const isNetErr = (err) => !navigator.onLine || /failed to fetch|networkerror|load failed|network|offline|fetch/i.test(String(err?.message || err));
+const connProblem = (err) => (!navigator.onLine ? 'offline' : /jwt|token|not authenticated|auth session/i.test(String(err?.message || err)) ? 'auth' : 'unreachable');
+const errMsg = (err) => (isNetErr(err) ? 'You’re offline or the database can’t be reached – not saved. Try again later.' : `Couldn't save – ${err?.message || err}`);
+const offlineNow = () => be.kind !== 'mock' && !navigator.onLine;
+const fail = (err) => { console.error(err); if (state.db) render(); toast(errMsg(err)); refresh().catch(() => {}); };
+const DASH = 'https://supabase.com/dashboard/project/rwbiizjwvyssdyxjuqan';
+function connMessage() {
+  if (state.conn === 'offline') return `<b>📴 You're offline</b> – showing what was saved on this device. Ticks and edits can't be saved until you're back online.`;
+  if (state.conn === 'auth') return `<b>Your sign-in has expired.</b> Sign in again to see your latest chores. <button type="button" class="link" data-relogin>Sign in again</button>`;
+  return `<b>Can't reach your chores database</b> – it may be paused (free plan pauses after a week unused). Restore it at <a href="${DASH}" target="_blank" rel="noopener">supabase.com</a>, then tap Retry.`;
+}
+const connBanner = () => (state.conn && state.conn !== 'updating' ? `<div class="banner conn" role="alert"><span>${connMessage()}</span><button type="button" class="ghost" data-retry>Retry</button></div>` : '');
+function renderUnreachable() {
+  if (!state.conn || state.conn === 'updating') state.conn = navigator.onLine ? 'unreachable' : 'offline';
+  $('#today').textContent = fmtDate(localToday(), { long: true });
+  $('#view').innerHTML = `<div class="card conn-card" role="alert"><p>${connMessage()}</p><button type="button" class="primary wide" data-retry>Retry</button></div>`;
+}
+const cacheKey = () => (be.kind === 'supabase' && be.user?.id ? `chores.cache.v1.${be.user.id}` : null);
+function saveCache(db) { const k = cacheKey(); if (k) try { localStorage.setItem(k, JSON.stringify({ saved_at: new Date().toISOString(), db })); } catch { /* full: skip */ } }
+function readCache() { const k = cacheKey(); try { return k ? JSON.parse(localStorage.getItem(k) || 'null') : null; } catch { return null; } }
+const clearCaches = () => Object.keys(localStorage).filter((k) => k.startsWith('chores.cache.')).forEach((k) => localStorage.removeItem(k));
+async function retry() {
+  if (!be.ready) return location.reload();
+  state.conn = 'updating'; if (state.db) render(); else $('#view').innerHTML = '<p class="empty">Loading…</p>';
+  refresh().catch(console.error);
+}
 const safe = (fn) => async (...a) => { try { return await fn(...a); } catch (err) { fail(err); } };
 const cap = () => state.db.settings?.cap_min || window.CHORES_CONFIG?.cap || 300;
 const away = () => state.db.away || [];
@@ -25,6 +63,7 @@ const dm = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : '–');
 const busy = new Set();   // tasks with a save in flight (repeated taps)
 async function markDone(taskId, doneOn, label) {
   const t = state.db.tasks.find((x) => x.id === taskId); if (!t || busy.has(taskId)) return;
+  if (offlineNow()) return fail(new Error('offline'));
   const p = planDone(t, state.db.completions, doneOn);
   if (p.duplicate) { render(); return toast(`${label} – already done ${fmtDate(doneOn)}`); }
   // an earlier date than the last done replaces it (effective last = latest date, so otherwise nothing would change)
@@ -48,6 +87,7 @@ async function markDone(taskId, doneOn, label) {
 }
 async function setSnooze(t, date) {
   const prev = t.snooze_until || null;
+  if (offlineNow()) return fail(new Error('offline'));
   try { await be.updateTask(t.id, { snooze_until: date }); } catch (err) { return fail(err); }
   await refresh().catch(console.error);
   toast(date ? `${t.name} – snoozed to ${fmtDate(date)}` : 'Snooze removed', async () => { await be.updateTask(t.id, { snooze_until: prev }); await refresh(); });
@@ -84,6 +124,11 @@ function item(r, { tick = true, extra = '' } = {}) {
       ${r.status ? statusChip(r.status) : ''}<span>${fmtDate(r.next_due)}</span>${snoozeChip(r)}${extra}</div></div>
     ${tick ? `<button class="more" data-act="date" aria-label="Done on another date">⋯</button>` : ''}</div>`;
 }
+const folds = new Set((() => { try { return JSON.parse(localStorage.getItem('chores.open') || '[]'); } catch { return []; } })());
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+// collapsed by default (heading, count, minutes); tap to expand; remembered on this device
+const fold = (key, title, rows, note, klass = '') => rows.length
+  ? `<details class="fold" data-fold="${key}" ${folds.has(key) ? 'open' : ''}><summary class="sec"><span>${title}</span><small>${note}</small></summary><div class="list ${klass}">${rows.join('')}</div></details>` : '';
 const section = (title, rows, note = '', klass = '') => rows.length
   ? `<h2 class="sec">${title}<small>${note}</small></h2><div class="list ${klass}">${rows.join('')}</div>` : '';
 const mins = (rows) => rows.reduce((s, r) => s + (Number(r.task.effort_min) || 0), 0);
@@ -115,9 +160,9 @@ function renderWeekend() {
     <ul>${supplies.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></details>`;
   h += section('🧺 Laundry routine', routine.map((r) => item(r)), `${mins(routine)} min · not capped`);
   h += section('This weekend', inCap.map((r) => item(r)), `Safety → Hygiene → Nice-to-have`);
-  h += section('🗓 Planned (catch-up & one-offs)', planned.map((r) => item(r, { extra: r.plan ? `<span class="chip b-Planned">${esc(r.task.plan_text || 'Planned')}</span>` : '' })), `${mins(planned)} min · not capped`);
+  h += fold('planned', '🗓 Planned', planned.map((r) => item(r, { extra: r.plan ? `<span class="chip b-Planned">${esc(r.task.plan_text || 'Planned')}</span>` : '' })), `${plural(planned.length, 'task')} · ${mins(planned)} min · not capped`);
   h += section('💼 Weekday (Mon evening)', weekday.map((r) => item(r)), 'not capped');
-  h += section('Carry over', carry.map((r) => item(r)), `${mins(carry)} min · past the ${c}-min cap`, 'carry');
+  h += fold('carry', 'Carry over', carry.map((r) => item(r)), `${plural(carry.length, 'task')} · ${mins(carry)} min · past the cap`, 'carry');
   h += section('💤 Not this weekend', snoozed.map((r) => item(r, { tick: false, extra: `<button class="link" data-unsnooze="${r.task.id}">Undo</button>` })), 'snoozed');
   if (!w.rows.length) h += `<div class="card empty">Nothing due by ${fmtDate(weekEnd)} 🎉<br>${state.next ? '' : 'Check <b>Next weekend</b> to get ahead.'}</div>`;
   if (recent.length) h += section('Done recently', recent.slice(0, 12).map((c) => { const t = tmap[c.task_id];
@@ -202,23 +247,36 @@ async function toggleCatchupNow(id) {
 
 function render() {
   const today = localToday();
-  $('#today').textContent = fmtDate(today, { long: true }) + ' · v11' + (be.kind === 'mock' ? ' · local mock' : '');
+  $('#today').textContent = fmtDate(today, { long: true }) + ' · v12' + (be.kind === 'mock' ? ' · local mock' : '') + (state.conn === 'updating' ? ' · updating…' : '');
   $('#account').textContent = '⚙ ' + (be.kind === 'mock' ? 'Mock data' : (be.user?.email || ''));
   document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === state.tab));
   $('#tab-catchup').hidden = !state.db.catchup.length || today > addDays(CU_END, 14);
   const qPos = document.activeElement?.id === 'q' ? document.activeElement.selectionStart : null;
-  $('#view').innerHTML = state.tab === 'all' ? renderAll() : state.tab === 'catchup' ? renderCatchup() : renderWeekend();
+  $('#view').innerHTML = connBanner() + (state.tab === 'all' ? renderAll() : state.tab === 'catchup' ? renderCatchup() : renderWeekend());
+  document.querySelectorAll('details.fold').forEach((d) => d.addEventListener('toggle', () => { d.open ? folds.add(d.dataset.fold) : folds.delete(d.dataset.fold); localStorage.setItem('chores.open', JSON.stringify([...folds])); }));
   document.querySelectorAll('details.room').forEach((d) => d.addEventListener('toggle', () => { d.open ? state.openRooms.add(d.dataset.room) : state.openRooms.delete(d.dataset.room); }));
   const nd = $('#needs'); if (nd) nd.addEventListener('toggle', () => (state.needsOpen = nd.open));
   const q = $('#q'); if (q && qPos != null) { q.focus(); q.setSelectionRange(qPos, qPos); }
   if (q) { q.oninput = (e) => { state.q = e.target.value; const pos = e.target.selectionStart; render(); const n = $('#q'); n.focus(); n.setSelectionRange(pos, pos); }; }
 }
 
-function renderLogin(msg = '') {
+function renderLogin(msg = '', sentTo = '') {
   $('#today').textContent = fmtDate(localToday(), { long: true });
-  $('#view').innerHTML = `<div class="card login"><h2>Sign in</h2><p class="muted">We'll email you a magic link – no password needed.</p>
-    <form id="login"><input type="email" id="email" required placeholder="you@example.com" autocomplete="email"><button class="primary">Send magic link</button></form><p>${esc(msg)}</p></div>`;
-  $('#login').onsubmit = async (e) => { e.preventDefault(); try { await be.signIn($('#email').value); renderLogin('Check your email and open the link on this device.'); } catch (err) { renderLogin('Could not send: ' + err.message); } };
+  $('#view').innerHTML = `<div class="card login"><h2>Sign in</h2><p class="muted">We'll email you a sign-in link and code – no password needed.</p>
+    <form id="login"><input type="email" id="email" required placeholder="you@example.com" autocomplete="email" value="${esc(sentTo)}"><button class="${sentTo ? 'ghost wide' : 'primary'}">${sentTo ? 'Send again' : 'Send sign-in email'}</button></form>
+    ${sentTo ? `<form id="code-form"><label class="field">Code from the email <input id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" maxlength="10" required placeholder="6-digit code"></label>
+      <button class="primary wide">Sign in</button></form><p class="muted small">Or open the link in the email on this device.</p>` : ''}
+    <p class="${/Could not|wrong|expired|invalid/i.test(msg) ? 'err' : ''}">${esc(msg)}</p></div>`;
+  $('#login').onsubmit = async (e) => {
+    e.preventDefault(); const email = $('#email').value.trim();
+    try { await be.signIn(email); renderLogin(`Email sent to ${email}.`, email); $('#code')?.focus(); } catch (err) { renderLogin('Could not send: ' + err.message, sentTo); }
+  };
+  const cf = $('#code-form');
+  if (cf) cf.onsubmit = async (e) => {
+    e.preventDefault(); const code = $('#code').value.replace(/\s+/g, '');
+    try { await be.verifyCode(sentTo, code); location.reload(); }
+    catch (err) { renderLogin(/expired|invalid/i.test(err.message) ? 'That code is wrong or has expired – check the latest email, or send a new one.' : 'Could not sign in: ' + err.message, sentTo); }
+  };
 }
 
 // ---------- away mode
@@ -229,11 +287,23 @@ function awayBanner() {
 async function deleteAway(id) {
   const a = away().find((x) => x.id === id); if (!a) return;
   if (!confirm(`Delete away dates ${dm(a.start_date)}–${dm(a.end_date)}? Tasks go back to their normal dates.`)) return;
-  try { await be.removeAway(id); } catch (err) { return toast(err.message); }
+  try { await be.removeAway(id); } catch (err) { return toast(errMsg(err)); }
   await refresh(); if ($('#settings').open) openSettings();
   toast('Away dates deleted', async () => { await be.addAway(a.start_date, a.end_date); await refresh(); });
 }
 
+async function downloadBackup() {
+  let db = state.db, note = '';
+  try { db = await be.load(); } catch { note = ' (from the copy saved on this device – offline)'; }
+  const day = new Date().toLocaleDateString('en-CA');
+  const data = { app: 'chores', format: 1, exported_at: new Date().toISOString(), account: be.user?.email || null,
+    tasks: db.tasks, completions: db.completions, away_periods: db.away || [], catchup_items: db.catchup, settings: db.settings || {} };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }));
+  a.download = `chores-backup-${day}.json`; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast(`Backup saved: ${a.download}${note}`);
+}
 function openSettings() {
   if (!state.db) return;
   const d = $('#settings'), today = localToday(), list = currentAway(away(), addDays(today, -60));   // recently ended trips still shift tasks
@@ -245,6 +315,9 @@ function openSettings() {
     <div class="two"><label class="field">From <input type="date" id="away-from" value="${today}" min="${addDays(today, -60)}"></label>
       <label class="field">To <input type="date" id="away-to" min="${today}"></label></div>
     <button type="button" class="primary wide" id="away-add">Add away dates</button>
+    <h3>Backup</h3>
+    <p class="muted small">A file with all tasks, ticks, away dates and catch-up items. Keep it somewhere private.</p>
+    <button type="button" class="ghost wide" id="backup">⬇ Download backup</button>
     <h3>Account</h3>
     <p class="muted small">${be.kind === 'mock' ? 'Local mock data (this device only).' : `Signed in as ${esc(be.user?.email || '')}`}</p>
     <button type="button" class="ghost wide" id="acct">${be.kind === 'mock' ? 'Reset mock data' : 'Sign out'}</button></form>`;
@@ -253,13 +326,14 @@ function openSettings() {
   $('#away-add', d).onclick = async () => {
     if (!from.value || !to.value) return toast('Pick both dates');
     if (to.value < from.value) return toast('“To” is before “From”');
-    try { await be.addAway(from.value, to.value); } catch (err) { return toast(err.message); }
+    try { await be.addAway(from.value, to.value); } catch (err) { return toast(errMsg(err)); }
     d.close(); await refresh(); toast(`Away ${dm(from.value)}–${dm(to.value)} – tasks shifted`);
   };
   d.querySelectorAll('[data-away-del]').forEach((b) => (b.onclick = () => deleteAway(b.dataset.awayDel)));
+  $('#backup', d).onclick = downloadBackup;
   $('#acct', d).onclick = async () => {
     if (be.kind === 'mock') { if (confirm('Reset the local mock data back to the seed?')) { be.reset(); location.reload(); } return; }
-    if (confirm(`Signed in as ${be.user?.email}. Sign out?`)) { await be.signOut(); location.reload(); }
+    if (confirm(`Signed in as ${be.user?.email}. Sign out?`)) { clearCaches(); await be.signOut().catch(() => {}); location.reload(); }
   };
   if (!d.open) d.showModal();
 }
@@ -344,6 +418,7 @@ function openEdit(t) {
       priority: v.priority, last_done: nn(v.last_done), notes: nn(v.notes), supplies: nn(v.supplies), season: nn(v.season),
       due_weekday: nn(v.due_weekday), planned_date: nn(v.planned_date), stagger_date: nn(v.stagger_date) };
     if (!isNew) row.active = !!v.active;
+    if (offlineNow()) return fail(errMsg(new Error('offline')));
     // editing Last done replaces it: drop ticks after the new date (all of them when cleared) so it actually takes effect
     const lastChanged = !isNew && newLast !== shownLast;
     if (!isNew && !lastChanged) delete row.last_done;   // untouched: keep the typed value as it is
@@ -357,7 +432,7 @@ function openEdit(t) {
         await be.updateTask(t.id, row);
         for (const c of drop) await be.removeCompletion(c.id);
       }
-    } catch (ex) { return fail(ex.message); }
+    } catch (ex) { return fail(isNetErr(ex) ? errMsg(ex) : ex.message); }
     d.close(); await refresh().catch(() => {});
     if (isNew) toast(`Added “${row.name}”`);
     else if (t.active !== false && row.active === false) toast(`Retired “${row.name}” – hidden from lists`, async () => { await be.updateTask(t.id, { active: true }); await refresh(); });
@@ -373,7 +448,7 @@ document.querySelectorAll('dialog.sheet').forEach((d) => d.addEventListener('cli
 
 // ---------- events: tap = done today, long-press / ⋯ = pick a date
 let pressTimer = null, longPressed = false;
-const taskOf = (el) => state.db.tasks.find((t) => t.id === el.closest('.item')?.dataset.id);
+const taskOf = (el) => state.db?.tasks.find((t) => t.id === el.closest('.item')?.dataset.id);
 const view = $('#view');
 view.addEventListener('pointerdown', (e) => {
   longPressed = false; const it = e.target.closest('.item[data-id]'); if (!it) return;
@@ -385,6 +460,9 @@ view.addEventListener('click', async (e) => {
   if (longPressed) { longPressed = false; return; }
   const b = e.target.closest('button');
   if (!b) { const host = e.target.closest('.body')?.closest('[data-id],[data-tid]'); if (host) openTask(host.dataset.id || host.dataset.tid); return; }
+  if (b.dataset.retry !== undefined) return retry();
+  if (b.dataset.relogin !== undefined) { clearCaches(); await be.signOut().catch(() => {}); return location.reload(); }
+  if (!state.db) return;   // sign-in / connection screens: their own handlers
   if (b.dataset.add !== undefined) return openEdit(null);
   if (b.dataset.settings !== undefined) return openSettings();
   if (b.dataset.awayDel) return deleteAway(b.dataset.awayDel);
@@ -404,11 +482,19 @@ $('#account').onclick = () => openSettings();
 (async () => {
   try {
     const ok = await be.init();
+    be.ready = true;
     if (!ok) return renderLogin();
+    // show the last data saved on this device straight away, then refresh in the background
+    const cached = readCache();
+    if (cached?.db) { state.db = cached.db; state.conn = 'updating'; render(); }
     let rt; be.onChange(() => { clearTimeout(rt); rt = setTimeout(() => refresh().catch(console.error), 250); });
     // phones drop the realtime socket in the background and the date may have changed: reload when shown again
     document.addEventListener('visibilitychange', () => { if (!document.hidden && state.db) refresh().catch(console.error); });
-    await refresh();
-  } catch (err) { $('#view').innerHTML = `<div class="card">Couldn't load: ${esc(err.message)}</div>`; console.error(err); }
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((r) => r.update()).catch(() => {});
+    window.addEventListener('online', () => { if (state.conn) retry(); });
+    window.addEventListener('offline', () => { if (state.db && be.kind !== 'mock') { state.conn = 'offline'; render(); } });
+    await refresh().catch(console.error);   // a failure shows the banner (with cached data) or the full message
+  } catch (err) { console.error(err); state.conn = connProblem(err); renderUnreachable(); }
+  finally {
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((r) => r.update()).catch(() => {});
+  }
 })();

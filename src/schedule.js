@@ -165,26 +165,36 @@ export function uniqueSupplies(tasks) {
 /** Away periods that are on now or still to come. */
 export const currentAway = (away = [], todayIso) => away.filter((a) => a.end_date >= todayIso).sort((a, b) => a.start_date.localeCompare(b.start_date));
 
-/** This Weekend (workbook sheet): everything due on/before weekEnd (Sunday), ranked and fitted into the cap.
- *  bucket: 'Routine' (weekly laundry) | 'Weekday' (due-weekday override, e.g. Admin Mon) | 'This weekend' | 'Carry over' | 'Planned'. */
-export function thisWeekend(tasks, completions, todayIso, { cap = DEFAULT_CAP, weekEnd = null, away = [] } = {}) {
+/** This Weekend: everything due on/before weekEnd (Sunday), ranked and fitted into the cap.
+ *  bucket: 'Routine' (weekly laundry) | 'Weekday' (due-weekday override, e.g. Admin Mon) | 'This weekend' | 'Carry over' | 'Planned'.
+ *  Ranking: Safety -> Hygiene -> Nice-to-have, then due date. Two changes from the workbook (v12, opts.strict = the old rule):
+ *   - aging: a capped task due two or more weekends before this one (so this is at least its 3rd weekend on the list)
+ *     moves ahead of its priority band, right after Safety - so small Nice-to-have jobs can't be skipped for months;
+ *   - fill: after the strict fill, smaller tasks that still fit under the cap go in too (the workbook stopped at the first overflow). */
+export const AGED_DAYS = 14;
+export function thisWeekend(tasks, completions, todayIso, { cap = DEFAULT_CAP, weekEnd = null, away = [], strict = false } = {}) {
   const WE = toDay(weekEnd || weekEndFor(todayIso));
   const rows = [];
   for (const r of computeAll(tasks, completions, todayIso, { away })) {
     const t = r.task, C = toDay(r.next_due);
     if (C == null || t.frequency === 'Daily' || r.status === 'Paused (winter)' || C > WE) continue;
     const routine = t.room === 'Laundry' && t.frequency === 'Weekly';
-    const group = (routine || t.due_weekday) ? 0 : r.planned_pending ? 4 : (PRIORITIES.indexOf(t.priority) + 1 || 3);
+    let group = (routine || t.due_weekday) ? 0 : r.planned_pending ? 4 : (PRIORITIES.indexOf(t.priority) + 1 || 3);
     const plan = routine ? 'Routine' : t.due_weekday ? `Weekday (${t.due_weekday} evening)` : r.planned_pending ? 'Planned' : r.plan;
-    rows.push({ ...r, group, C, weekend_plan: plan });
+    const aged = !strict && group >= 2 && group <= 3 && (WE - 1) - C >= AGED_DAYS;
+    if (aged) group = 1.5;
+    rows.push({ ...r, group, C, weekend_plan: plan, aged });
   }
   rows.sort((a, b) => a.group - b.group || a.C - b.C || (a.task.sort_key ?? 0) - (b.task.sort_key ?? 0));
-  let run = 0;
+  let run = 0, used = 0;
   for (const r of rows) {
     const p = r.weekend_plan; const capped = !(p === 'Planned' || p === 'Routine' || p.startsWith('Weekday'));
-    if (capped) run += Number(r.task.effort_min) || 0;
+    const e = Number(r.task.effort_min) || 0;
+    if (capped) run += e;
     r.running = run;
-    r.bucket = p === 'Planned' ? 'Planned' : p === 'Routine' ? 'Routine' : p.startsWith('Weekday') ? 'Weekday' : (run <= cap ? 'This weekend' : 'Carry over');
+    const fits = strict ? run <= cap : used + e <= cap;
+    if (capped && fits) used += e;
+    r.bucket = p === 'Planned' ? 'Planned' : p === 'Routine' ? 'Routine' : p.startsWith('Weekday') ? 'Weekday' : (fits ? 'This weekend' : 'Carry over');
     delete r.C;
   }
   const sum = (b) => rows.filter((r) => r.bucket === b).reduce((s, r) => s + (Number(r.task.effort_min) || 0), 0);

@@ -1,7 +1,7 @@
 // Data layer with two interchangeable backends:
 //   MockBackend      - localStorage, seeded from data/seed.json (works offline, no account)
 //   SupabaseBackend  - supabase-js v2 from a CDN, email magic-link auth, RLS-protected tables
-// Both expose: init(), user, signIn(email), signOut(), load() -> {tasks, completions, catchup, settings, away},
+// Both expose: init(), user, signIn(email), verifyCode(email, code), signOut(), load() -> {tasks, completions, catchup, settings, away},
 //              addCompletion(taskId, doneOn, source), removeCompletion(id), setCatchupDone(id, doneOn|null),
 //              addTask(task), updateTask(id, patch), addAway(start, end), removeAway(id), onChange(cb)
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2));
@@ -21,7 +21,7 @@ export class MockBackend {
     return true;
   }
   save() { localStorage.setItem(this.key, JSON.stringify(this.db)); }
-  async signIn() {} async signOut() {}
+  async signIn() {} async verifyCode() {} async signOut() {}
   async load() { return structuredClone(this.db); }
   async addCompletion(task_id, done_on, source = 'app', note = null) {
     const c = { id: uid(), task_id, done_on, note, source, created_at: new Date().toISOString() };
@@ -47,7 +47,7 @@ export class MockBackend {
 export class SupabaseBackend {
   constructor(url, anonKey) { this.url = url; this.anonKey = anonKey; this.kind = 'supabase'; this.user = null; }
   async init() {
-    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+    const { createClient } = await loadSupabase();
     this.sb = createClient(this.url, this.anonKey, { auth: { persistSession: true, detectSessionInUrl: true, flowType: 'pkce' } });
     // also accept links that carry tokens in the #hash (e.g. a sign-in link made by the assistant)
     const h = new URLSearchParams(location.hash.slice(1));
@@ -55,14 +55,22 @@ export class SupabaseBackend {
       await this.sb.auth.setSession({ access_token: h.get('access_token'), refresh_token: h.get('refresh_token') });
       history.replaceState(null, '', location.pathname + location.search);
     }
-    const { data } = await this.sb.auth.getSession();
+    const { data, error } = await this.sb.auth.getSession();
     this.user = data.session?.user || null;
+    // offline with an expired access token: the refresh can't run, but the saved session still says who you are -
+    // carry on with cached data; the next online load refreshes the token (or shows the sign-in if it's really gone)
+    if (!this.user && error) this.user = savedSessionUser(this.url);
+    this.offlineSession = !data.session && !!this.user;
     this.sb.auth.onAuthStateChange((_e, s) => { const was = !!this.user; this.user = s?.user || null; if (was !== !!this.user) location.reload(); });
     return !!this.user;
   }
   async signIn(email) {
     const redirect = location.origin + location.pathname;
     const { error } = await this.sb.auth.signInWithOtp({ email, options: { emailRedirectTo: redirect, shouldCreateUser: true } });
+    if (error) throw error;
+  }
+  async verifyCode(email, token) {
+    const { error } = await this.sb.auth.verifyOtp({ email, token, type: 'email' });
     if (error) throw error;
   }
   async signOut() { await this.sb.auth.signOut(); }
@@ -106,6 +114,24 @@ export class SupabaseBackend {
   onChange(cb) {
     this.sb.channel('chores').on('postgres_changes', { event: '*', schema: 'public' }, () => cb()).subscribe();
   }
+}
+
+// supabase-js v2 UMD build, vendored (vendor/supabase.js) so it is cached by the service worker and works offline
+function loadSupabase() {
+  if (window.supabase?.createClient) return Promise.resolve(window.supabase);
+  return new Promise((ok, ko) => {
+    const s = document.createElement('script'); s.src = new URL('../vendor/supabase.js?v=12', import.meta.url).href;
+    s.onload = () => (window.supabase?.createClient ? ok(window.supabase) : ko(new Error('supabase-js did not load')));
+    s.onerror = () => ko(new Error('Could not load supabase-js (offline?)'));
+    document.head.appendChild(s);
+  });
+}
+function savedSessionUser(url) {
+  try {
+    const ref = new URL(url).hostname.split('.')[0];
+    const v = JSON.parse(localStorage.getItem(`sb-${ref}-auth-token`) || 'null');
+    return v?.user || v?.currentSession?.user || null;
+  } catch { return null; }
 }
 
 export function makeBackend(cfg = window.CHORES_CONFIG || {}) {

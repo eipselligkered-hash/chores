@@ -14,6 +14,25 @@ seasons, the 300-minute weekend cap) – tested against the workbook recalculate
 * **Catch-up** – Fri 23 – Tue 27 Oct with ticks (hidden two weeks after the catch-up).
 * Add to home screen (PWA). No build step: plain HTML/CSS/JS.
 
+### v12
+* **Weekend planner**: after the Safety → Hygiene → Nice-to-have fill, smaller tasks that still fit go into the leftover minutes,
+  and a task due two or more weekends ago (its 3rd weekend on the list) moves up right after Safety (`thisWeekend`, `AGED_DAYS`;
+  `{ strict: true }` = the original workbook rule, still tested against the workbook). The CLI uses the same code.
+* **Sign-in with a code**: after *Send sign-in email* a code field appears (`verifyOtp` type `email`); the link still works.
+  For the code to be in the email, the Supabase *Magic Link* template must include `{{ .Token }}` – see
+  `supabase/email_template_magic_link.html`. With a link-only template the app works exactly as before (use the link).
+* **Paused / unreachable database**: friendly message with a link to the Supabase project and **Retry** (loads time out after 15 s).
+* **Offline**: the last loaded data is kept per user in localStorage and shown straight away (*updating…* in the header) while the
+  app refreshes; supabase-js is vendored (`vendor/supabase.js`) and cached by the service worker, so the app opens offline.
+  Ticks and edits while offline show an error instead of seeming to save (no offline queue).
+* **Backup**: Settings → *Download backup* saves `chores-backup-YYYY-MM-DD.json` (tasks, completions, away periods, catch-up items,
+  settings). Keep it private – never commit it (this repo is public).
+  *Restore* (not built in): in a new/empty project run `supabase/schema.sql` (+ migrations), then insert the rows with the service
+  key, parents first – `tasks`, then `completions`, `catchup_items`, `away_periods`, `settings` – e.g.
+  `POST /rest/v1/<table>` with `Prefer: resolution=merge-duplicates` (upsert on `id`), setting `owner_id` to the signed-in user's id.
+* This weekend: *Planned* and *Carry over* are collapsed (heading, count, minutes); the open/closed state is remembered.
+* Contrast: grey text ≥ 5:1, grey chips ≥ 5.7:1, empty tick border ≥ 3.4:1; small rows ≥ 44 px.
+
 ## Files
 | Path | What |
 |---|---|
@@ -28,7 +47,9 @@ seasons, the 300-minute weekend cap) – tested against the workbook recalculate
 | `scripts/export_seed.py` | regenerate the seed from the workbook |
 | `scripts/make_truth.py` | LibreOffice ground truth for the tests |
 | `scripts/assistant_cli/cli.mjs` | helper for the assistant (REST + service key, or a mock file) |
-| `tests/` | `node --test tests/` (schedule parity, snooze/away, CLI), `tests/smoke_ui.py` + `tests/smoke_features.py` (headless browser) |
+| `tests/` | `node --test tests/` (schedule parity, planner, snooze/away, CLI), `tests/smoke_features.py` (mock) + `tests/smoke_supabase.py` (fake Supabase: code sign-in, cache, paused, offline, backup) |
+| `vendor/supabase.js` | supabase-js 2.118.0 UMD build (MIT), served from the app so it works offline |
+| `review/` | workload proposal + simulation (`node review/proposal.mjs snapshot.json`) |
 
 ## Run locally
 ```bash

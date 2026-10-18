@@ -28,7 +28,8 @@ for (const sc of scenarios) {
       }
     }
     assert.equal(weekEndFor(sc.today), truth.week_end, 'week end');
-    const we = thisWeekend(seed.tasks, comps, sc.today, { cap: truth.cap });
+    // strict = the workbook rule, still matched exactly (proves the port); the app's v12 rule is checked below
+    const we = thisWeekend(seed.tasks, comps, sc.today, { cap: truth.cap, strict: true });
     const a = we.rows.map((r) => [r.task.room, r.task.name, r.weekend_plan, r.running, r.bucket].join(' | '));
     const b = truth.weekend.map((r) => [r.room, r.name, r.plan, r.running, r.bucket].join(' | '));
     grand.fields += b.length;
@@ -39,6 +40,21 @@ for (const sc of scenarios) {
                 `This Weekend rows ${b.length - wm.length}/${b.length} match`);
     assert.deepEqual(mism, [], 'task mismatches');
     assert.deepEqual(wm, [], 'This Weekend mismatches');
+    // v12 rule (aging + fill), against the same workbook rows
+    const v = thisWeekend(seed.tasks, comps, sc.today, { cap: truth.cap });
+    const k = (r) => key(r.task?.room ?? r.room, r.task?.name ?? r.name);
+    assert.deepEqual(v.rows.map(k).sort(), truth.weekend.map(k).sort(), 'same tasks due');
+    const wb = Object.fromEntries(truth.weekend.map((r) => [k(r), r.bucket]));
+    for (const r of v.rows) if (!['This weekend', 'Carry over'].includes(wb[k(r)])) assert.equal(r.bucket, wb[k(r)], `${k(r)} keeps its uncapped bucket`);
+    const eff = (r) => Number(r.task.effort_min) || 0;
+    const inCap = v.rows.filter((r) => r.bucket === 'This weekend'), carry = v.rows.filter((r) => r.bucket === 'Carry over');
+    const used = inCap.reduce((x, r) => x + eff(r), 0);
+    assert.ok(used <= truth.cap, `in cap ${used} <= ${truth.cap}`);
+    const wbUsed = truth.weekend.filter((r) => r.bucket === 'This weekend').reduce((x, r) => x + (Number(byKey[k(r)].effort_min) || 0), 0);
+    assert.ok(used >= wbUsed || v.rows.some((r) => r.aged), `fill never plans less than the workbook (${used} vs ${wbUsed})`);
+    for (const r of carry) assert.ok(used + eff(r) > truth.cap, `${k(r)} (${eff(r)} min) would have fitted`);
+    const safety = v.rows.filter((r) => r.task.priority === 'Safety' && !r.planned_pending && wb[k(r)] === 'This weekend');
+    for (const r of safety) assert.equal(r.bucket, 'This weekend', `${k(r)}: Safety stays in`);
   });
 }
 test('summary', () => console.log(`TOTAL: ${grand.fields - grand.bad}/${grand.fields} compared values match (${grand.bad} mismatches)`));

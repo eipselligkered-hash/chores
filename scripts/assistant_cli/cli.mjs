@@ -84,7 +84,7 @@ export function matchTask(q, tasks, dueIds = new Set()) {
   return { candidates: s.slice(0, 5).map((x) => x.t) };
 }
 
-const line = (r) => `${r.task.priority === 'Safety' ? '⚠ ' : '  '}${r.task.room}: ${r.task.name} · ${r.task.effort_min ?? '?'} min · ${r.task.priority} · ${r.status} ${fmtDate(r.next_due)}` +
+const line = (r) => `${r.task.priority === 'Safety' ? '⚠ ' : '  '}${r.task.room}: ${r.task.name} · ${r.task.effort_min ?? '?'} min · ${r.task.priority}${r.aged ? ' (moved up: waiting 2+ weekends)' : ''} · ${r.status} ${fmtDate(r.next_due)}` +
   `${r.snoozed_until ? ` · snoozed to ${fmtDate(r.snoozed_until)}` : ''}${r.away_shifted ? ` · moved from ${fmtDate(r.due_before)} (away)` : ''}${r.task.supplies ? ` · need: ${r.task.supplies}` : ''}`;
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -108,7 +108,7 @@ export async function main(args = argv) {
     if (json) {
       console.log(JSON.stringify({ week_end: we.week_end, cap: we.cap, totals: we.totals, supplies, away: awayNow,
         rows: we.rows.map((r) => ({ room: r.task.room, name: r.task.name, priority: r.task.priority, effort_min: r.task.effort_min, next_due: r.next_due, status: r.status, bucket: r.bucket, plan: r.weekend_plan,
-          supplies: r.task.supplies || null, snoozed_until: r.snoozed_until, away_shifted: r.away_shifted || false })),
+          supplies: r.task.supplies || null, snoozed_until: r.snoozed_until, away_shifted: r.away_shifted || false, aged: r.aged || false })),
         snoozed: snoozed.map((r) => ({ room: r.task.room, name: r.task.name, snoozed_until: r.snoozed_until, was_due: r.due_before })) }, null, 1));
       return 0;
     }

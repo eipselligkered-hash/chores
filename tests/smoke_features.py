@@ -16,7 +16,7 @@ with sync_playwright() as p:
     pg.on("console", lambda m: m.type == "error" and errors.append(m.text)); pg.on("pageerror", lambda e: errors.append(str(e)))
     pg.on("dialog", lambda d: d.accept())
     pg.goto(BASE + "?today=2026-11-06"); pg.wait_for_selector(".cap")
-    ok("header shows v11", "v11" in pg.inner_text("#today"))
+    ok("header shows v12", "v12" in pg.inner_text("#today"))
     # supplies line
     ok("You'll need line present", pg.locator("#needs").count() == 1)
     ok("You'll need preview when collapsed", "Degreaser" in pg.inner_text("#needs summary"))
@@ -35,6 +35,16 @@ with sync_playwright() as p:
     pg.keyboard.press("Escape"); pg.wait_for_timeout(150)
     pg.locator(".item[data-id] .more").first.click(); ok("⋯ still opens date picker", pg.locator("#sheet[open]").count() == 1)
     pg.keyboard.press("Escape"); pg.wait_for_timeout(150)
+    # v12: Planned and Carry over collapsed by default (heading + count + minutes), tap to expand, remembered
+    ok("Planned collapsed by default", pg.locator("details.fold[data-fold=planned]:not([open])").count() == 1)
+    ok("Carry over collapsed by default", pg.locator("details.fold[data-fold=carry]:not([open])").count() == 1)
+    ok("collapsed heading shows count + minutes", "tasks ·" in pg.inner_text("details.fold[data-fold=planned] summary") and "min" in pg.inner_text("details.fold[data-fold=carry] summary"))
+    pg.evaluate("document.querySelector('#toast').hidden = true; document.querySelector('.item[data-id] .more').blur()")
+    pg.evaluate("(() => { const h = document.querySelector('details.fold[data-fold=planned]'); scrollTo(0, h.getBoundingClientRect().top + scrollY - 420); })()"); pg.wait_for_timeout(150)
+    pg.screenshot(path=f"{OUT}/weekend_collapsed.png"); pg.evaluate("scrollTo(0, 0)")
+    pg.click("details.fold[data-fold=planned] summary"); pg.wait_for_timeout(150)
+    pg.reload(); pg.wait_for_selector(".cap")
+    ok("expanded Planned remembered after reload", pg.locator("details.fold[data-fold=planned][open]").count() == 1)
     # task sheet
     hood = pg.locator(".item[data-id]", has_text="Clean hood above stove")
     hood.locator(".name").tap(); pg.wait_for_selector("#task-sheet[open]")
