@@ -56,3 +56,18 @@ test('CLI: done twice on the same day adds one completion; future/bad --date ref
   assert.match(cli(['done', 'hood', '--date', '2026-11-01', '--dry-run']), /was last done Fri 06\/11/);
   fs.rmSync(file);
 });
+
+test('All tasks By time: effort buckets and soonest-due order', async () => {
+  const { effortBucket, EFFORT_BUCKETS, byNextDue, computeAll } = await import('../src/schedule.js');
+  assert.deepEqual([0, 5, 9, 10, 30, 31, 60, 61, 240, null, undefined].map(effortBucket),
+    ['Quick (under 10 min)', 'Quick (under 10 min)', 'Quick (under 10 min)', '10–30 min', '10–30 min', '30–60 min', '30–60 min', 'Over an hour', 'Over an hour', 'No time set', 'No time set']);
+  assert.equal(EFFORT_BUCKETS.length, 5);
+  const seed = JSON.parse(fs.readFileSync(root + 'data/seed.json'));
+  const rows = computeAll(seed.tasks, seed.completions, '2026-11-06').sort(byNextDue);
+  const quick = rows.filter((r) => effortBucket(r.task.effort_min) === EFFORT_BUCKETS[0]);
+  assert.ok(quick.length > 0);
+  const dated = quick.filter((r) => r.next_due).map((r) => r.next_due);
+  assert.deepEqual(dated, [...dated].sort()); assert.ok(quick.slice(quick.length - quick.filter((r) => !r.next_due).length).every((r) => !r.next_due));
+  const firstOk = quick.findIndex((r) => r.status === 'OK'), lastOver = quick.map((r) => r.status).lastIndexOf('Overdue');
+  assert.ok(firstOk < 0 || lastOver < firstOk, 'overdue before OK');
+});

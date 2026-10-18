@@ -16,7 +16,7 @@ with sync_playwright() as p:
     pg.on("console", lambda m: m.type == "error" and errors.append(m.text)); pg.on("pageerror", lambda e: errors.append(str(e)))
     pg.on("dialog", lambda d: d.accept())
     pg.goto(BASE + "?today=2026-11-06"); pg.wait_for_selector(".cap")
-    ok("header shows v9", "v9" in pg.inner_text("#today"))
+    ok("header shows v10", "v10" in pg.inner_text("#today"))
     # supplies line
     ok("You'll need line present", pg.locator("#needs").count() == 1)
     ok("You'll need preview when collapsed", "Degreaser" in pg.inner_text("#needs summary"))
@@ -85,6 +85,18 @@ with sync_playwright() as p:
     pg.fill("#q", ""); pg.wait_for_timeout(200)
     ok("Retired section lists it", pg.locator("details.retired", has_text="Clean grout").count() == 1)
     ok("still 123 active rows", pg.locator("details.room:not(.retired) .item").count() == 123)
+    # v10: By time grouping
+    pg.click("[data-group=time]"); pg.wait_for_timeout(200)
+    heads = pg.locator("details.room:not(.retired) > summary > span:first-child").all_inner_texts()
+    order = ["Quick (under 10 min)", "10–30 min", "30–60 min", "Over an hour", "No time set"]
+    got = [o for h in heads for o in order if h.startswith(o)]
+    ok(f"By time groups in order ({got})", got == [o for o in order if o in got] and len(got) >= 4)
+    seg = pg.locator(".seg:has([data-group=time])").bounding_box()
+    ok("group toggle fits at 390px", seg["x"] >= 0 and seg["x"] + seg["width"] <= 390 and pg.evaluate("document.documentElement.scrollWidth") <= 390)
+    pg.evaluate("document.querySelector('#toast').hidden = true"); pg.screenshot(path=f"{OUT}/all_by_time.png")
+    pg.click("[data-filter=todo]"); pg.wait_for_timeout(200)
+    ok("By time works with the To do filter", pg.locator("details.room .item[data-id]").count() > 0 and pg.locator("details.room .chip.s-OK").count() == 0)
+    pg.click("[data-filter=all]"); pg.click("[data-group=room]"); pg.wait_for_timeout(200)
     # v9: an earlier date than the last done replaces it; repeated taps don't duplicate; edit shows the effective Last done
     mock = lambda: pg.evaluate("JSON.parse(localStorage.getItem('chores.mock.v1'))")
     iron_id = [t for t in mock()["tasks"] if t["name"] == "Ironing"][0]["id"]

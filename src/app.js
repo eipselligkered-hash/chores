@@ -1,6 +1,6 @@
 import { computeAll, computeTask, thisWeekend, weekEndFor, fmtDate, addDays, toDay, FREQUENCIES, SEASONS, PRIORITIES, WEEKDAYS,
-  nextWeekendSat, saturdayOnOrAfter, uniqueSupplies, currentAway, effectiveLast, fromDay, planDone } from './schedule.js?v=9';
-import { makeBackend } from './data.js?v=9';
+  nextWeekendSat, saturdayOnOrAfter, uniqueSupplies, currentAway, effectiveLast, fromDay, planDone, EFFORT_BUCKETS, effortBucket, byNextDue } from './schedule.js?v=10';
+import { makeBackend } from './data.js?v=10';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -10,7 +10,7 @@ const localToday = () => params.get('today') || new Date().toLocaleDateString('e
 const CU_START = '2026-10-23', CU_END = '2026-10-27';
 
 const be = makeBackend();
-const state = { openRooms: new Set(), group: localStorage.getItem('chores.group') || 'room', filter: localStorage.getItem('chores.filter') || 'all', tab: params.get('tab') || 'weekend', next: params.get('week') === 'next', q: '', db: null, lastUndo: null };
+const state = { openRooms: new Set(), group: ['room', 'priority', 'time'].includes(localStorage.getItem('chores.group')) ? localStorage.getItem('chores.group') : 'room', filter: localStorage.getItem('chores.filter') || 'all', tab: params.get('tab') || 'weekend', next: params.get('week') === 'next', q: '', db: null, lastUndo: null };
 
 // only the most recent load is shown, so a slow older response can't overwrite newer data
 let loadSeq = 0;
@@ -137,15 +137,17 @@ function renderAll() {
   const F = state.filter, nTodo = rows.filter(isTodo).length, nDone = rows.filter(isDone).length;
   const passF = (r) => (F === 'todo' ? isTodo(r) : F === 'done' ? isDone(r) : true);
   const G = state.group, PRIO = ['Safety', 'Hygiene', 'Nice-to-have'];
-  const keyOf = (r) => (G === 'priority' ? (r.task.priority || 'No priority') : r.task.room);
+  const keyOf = (r) => (G === 'priority' ? (r.task.priority || 'No priority') : G === 'time' ? effortBucket(r.task.effort_min) : r.task.room);
   const rooms = new Map();
   if (G === 'priority') for (const k of PRIO) rooms.set(k, []);
-  const list = G === 'priority' ? rows.slice().sort((a, b) => (a.next_due || '9999').localeCompare(b.next_due || '9999') || a.task.sort_key - b.task.sort_key) : rows;
+  if (G === 'time') for (const k of EFFORT_BUCKETS) rooms.set(k, []);
+  const daily = (r) => (r.task.frequency === 'Daily' ? 1 : 0);   // 'every day' has no real due date: after the dated jobs
+  const list = G === 'room' ? rows : rows.slice().sort(G === 'time' ? (a, b) => daily(a) - daily(b) || byNextDue(a, b) : byNextDue);
   for (const r of list) { if (!passF(r)) continue; if (q && !(`${r.task.room} ${r.task.name} ${r.task.priority}`.toLowerCase().includes(q))) continue; const k = keyOf(r); if (!rooms.has(k)) rooms.set(k, []); rooms.get(k).push(r); }
   for (const [k, v] of rooms) if (!v.length) rooms.delete(k);
   let h = `<div class="toolbar"><input class="search" type="search" placeholder="Search ${rows.length} tasks…" value="${esc(state.q)}" id="q" autocomplete="off">
     <button class="primary add" data-add>+ Add task</button><button class="ghost gear" data-settings aria-label="Settings and away dates">⚙</button></div>
-    <div class="seg"><button data-group="room" class="${G === 'room' ? 'on' : ''}">By room</button><button data-group="priority" class="${G === 'priority' ? 'on' : ''}">By priority</button></div>
+    <div class="seg"><button data-group="room" class="${G === 'room' ? 'on' : ''}">By room</button><button data-group="priority" class="${G === 'priority' ? 'on' : ''}">By priority</button><button data-group="time" class="${G === 'time' ? 'on' : ''}">By time</button></div>
     <div class="seg"><button data-filter="all" class="${F === 'all' ? 'on' : ''}">All</button><button data-filter="todo" class="${F === 'todo' ? 'on' : ''}">To do (${nTodo})</button><button data-filter="done" class="${F === 'done' ? 'on' : ''}">Done (${nDone})</button></div>
     <div class="summary">${['Overdue', 'Due today', 'Due by Sunday', 'OK', 'Paused (winter)', 'Daily habit', 'No date'].filter((s) => counts[s]).map((s) => `<span class="chip s-${cls(s)}">${counts[s]} ${s}</span>`).join('')}</div>`;
   for (const [room, rs] of rooms) {
@@ -153,7 +155,7 @@ function renderAll() {
     h += `<details class="room" data-room="${esc(G + ':' + room)}" ${q || F !== 'all' || od || due || state.openRooms.has(G + ':' + room) ? 'open' : ''}><summary><span>${esc(room)} <small class="muted">(${rs.length})</small></span><span class="counts">${od ? `<span class="chip s-Overdue">${od} overdue</span>` : ''}${due ? `<span class="chip s-Due-today">${due} due</span>` : ''}</span></summary>
       ${rs.map((r) => `<div class="item ${r.task.priority === 'Safety' ? 'safety' : ''}" data-id="${r.task.id}">
         <button class="tick ${isDone(r) ? 'done' : ''}" data-act="done" aria-label="Mark ${esc(r.task.name)} done today">✓</button><div class="body"><div class="name">${esc(r.task.name)}</div>
-        <div class="meta">${G === 'priority' ? `<span>${esc(r.task.room)}</span>` : ''}<span>${esc(r.task.frequency)}</span>${r.task.effort_min ? `<span>⏱ ${r.task.effort_min} min</span>` : ''}${G === 'priority' ? '' : prioChip(r.task.priority)}${r.task.season ? `<span>🍂 ${esc(r.task.season)}</span>` : ''}${snoozeChip(r)}</div></div>
+        <div class="meta">${G !== 'room' ? `<span>${esc(r.task.room)}</span>` : ''}<span>${esc(r.task.frequency)}</span>${r.task.effort_min ? `<span>⏱ ${r.task.effort_min} min</span>` : ''}${G === 'priority' ? '' : prioChip(r.task.priority)}${r.task.season ? `<span>🍂 ${esc(r.task.season)}</span>` : ''}${snoozeChip(r)}</div></div>
         <div class="due">${isDone(r) ? '<span class="chip s-Done">Done ✓</span>' : statusChip(r.status)}<div class="muted">${F === 'done' ? `done ${fmtDate(r.last_effective)}` : r.task.frequency === 'Daily' ? 'every day' : fmtDate(r.next_due)}</div></div>
         <button class="more" data-act="date" aria-label="Done on another date">⋯</button></div>`).join('')}</details>`;
   }
@@ -200,7 +202,7 @@ async function toggleCatchupNow(id) {
 
 function render() {
   const today = localToday();
-  $('#today').textContent = fmtDate(today, { long: true }) + ' · v9' + (be.kind === 'mock' ? ' · local mock' : '');
+  $('#today').textContent = fmtDate(today, { long: true }) + ' · v10' + (be.kind === 'mock' ? ' · local mock' : '');
   $('#account').textContent = '⚙ ' + (be.kind === 'mock' ? 'Mock data' : (be.user?.email || ''));
   document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === state.tab));
   $('#tab-catchup').hidden = !state.db.catchup.length || today > addDays(CU_END, 14);

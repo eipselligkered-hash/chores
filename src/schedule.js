@@ -142,6 +142,16 @@ export function computeTask(task, completions, todayIso, { away = [] } = {}) {
 export const computeAll = (tasks, completions, todayIso, opts = {}) =>
   tasks.filter((t) => t.active !== false).map((t) => computeTask(t, completions, todayIso, opts));
 
+/** All tasks 'By time' groups (effort_min), in display order. */
+export const EFFORT_BUCKETS = ['Quick (under 10 min)', '10–30 min', '30–60 min', 'Over an hour', 'No time set'];
+export function effortBucket(min) {
+  if (min == null || min === '' || !Number.isFinite(Number(min))) return EFFORT_BUCKETS[4];
+  const m = Number(min);
+  return m < 10 ? EFFORT_BUCKETS[0] : m <= 30 ? EFFORT_BUCKETS[1] : m <= 60 ? EFFORT_BUCKETS[2] : EFFORT_BUCKETS[3];
+}
+/** Soonest next due first (overdue first), no date last, then workbook order. */
+export const byNextDue = (a, b) => (a.next_due || '9999').localeCompare(b.next_due || '9999') || (a.task.sort_key ?? 0) - (b.task.sort_key ?? 0);
+
 /** 'Not this weekend': the Saturday after the coming/current weekend. */
 export const nextWeekendSat = (todayIso) => fromDay(toDay(weekEndFor(todayIso)) + 6);
 /** Saturday on/after a date. */
