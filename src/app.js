@@ -1,5 +1,5 @@
-import { computeAll, thisWeekend, weekEndFor, fmtDate, addDays, toDay } from './schedule.js?v=4';
-import { makeBackend } from './data.js?v=4';
+import { computeAll, thisWeekend, weekEndFor, fmtDate, addDays, toDay } from './schedule.js?v=5';
+import { makeBackend } from './data.js?v=5';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -9,7 +9,7 @@ const localToday = () => params.get('today') || new Date().toLocaleDateString('e
 const CU_START = '2026-10-23', CU_END = '2026-10-27';
 
 const be = makeBackend();
-const state = { openRooms: new Set(), tab: params.get('tab') || 'weekend', next: params.get('week') === 'next', q: '', db: null, lastUndo: null };
+const state = { openRooms: new Set(), group: localStorage.getItem('chores.group') || 'room', tab: params.get('tab') || 'weekend', next: params.get('week') === 'next', q: '', db: null, lastUndo: null };
 
 async function refresh() { state.db = await be.load(); render(); }
 const cap = () => state.db.settings?.cap_min || window.CHORES_CONFIG?.cap || 300;
@@ -89,16 +89,22 @@ function renderAll() {
   const rows = computeAll(db.tasks, db.completions, today).sort((a, b) => a.task.sort_key - b.task.sort_key);
   const q = state.q.trim().toLowerCase();
   const counts = {}; rows.forEach((r) => (counts[r.status] = (counts[r.status] || 0) + 1));
+  const G = state.group, PRIO = ['Safety', 'Hygiene', 'Nice-to-have'];
+  const keyOf = (r) => (G === 'priority' ? (r.task.priority || 'No priority') : r.task.room);
   const rooms = new Map();
-  for (const r of rows) { if (q && !(`${r.task.room} ${r.task.name}`.toLowerCase().includes(q))) continue; if (!rooms.has(r.task.room)) rooms.set(r.task.room, []); rooms.get(r.task.room).push(r); }
+  if (G === 'priority') for (const k of PRIO) rooms.set(k, []);
+  const list = G === 'priority' ? rows.slice().sort((a, b) => (a.next_due || '9999').localeCompare(b.next_due || '9999') || a.task.sort_key - b.task.sort_key) : rows;
+  for (const r of list) { if (q && !(`${r.task.room} ${r.task.name} ${r.task.priority}`.toLowerCase().includes(q))) continue; const k = keyOf(r); if (!rooms.has(k)) rooms.set(k, []); rooms.get(k).push(r); }
+  for (const [k, v] of rooms) if (!v.length) rooms.delete(k);
   let h = `<input class="search" type="search" placeholder="Search ${rows.length} tasks…" value="${esc(state.q)}" id="q" autocomplete="off">
+    <div class="seg"><button data-group="room" class="${G === 'room' ? 'on' : ''}">By room</button><button data-group="priority" class="${G === 'priority' ? 'on' : ''}">By priority</button></div>
     <div class="summary">${['Overdue', 'Due today', 'Due by Sunday', 'OK', 'Paused (winter)', 'Daily habit', 'No date'].filter((s) => counts[s]).map((s) => `<span class="chip s-${cls(s)}">${counts[s]} ${s}</span>`).join('')}</div>`;
   for (const [room, rs] of rooms) {
     const od = rs.filter((r) => r.status === 'Overdue').length, due = rs.filter((r) => r.status.startsWith('Due')).length;
-    h += `<details class="room" data-room="${esc(room)}" ${q || od || due || state.openRooms.has(room) ? 'open' : ''}><summary><span>${esc(room)} <small class="muted">(${rs.length})</small></span><span class="counts">${od ? `<span class="chip s-Overdue">${od} overdue</span>` : ''}${due ? `<span class="chip s-Due-today">${due} due</span>` : ''}</span></summary>
+    h += `<details class="room" data-room="${esc(G + ':' + room)}" ${q || od || due || state.openRooms.has(G + ':' + room) ? 'open' : ''}><summary><span>${esc(room)} <small class="muted">(${rs.length})</small></span><span class="counts">${od ? `<span class="chip s-Overdue">${od} overdue</span>` : ''}${due ? `<span class="chip s-Due-today">${due} due</span>` : ''}</span></summary>
       ${rs.map((r) => `<div class="item ${r.task.priority === 'Safety' ? 'safety' : ''}" data-id="${r.task.id}">
         <button class="tick" data-act="done" aria-label="Mark ${esc(r.task.name)} done today">✓</button><div class="body"><div class="name">${esc(r.task.name)}</div>
-        <div class="meta"><span>${esc(r.task.frequency)}</span>${r.task.effort_min ? `<span>⏱ ${r.task.effort_min} min</span>` : ''}${prioChip(r.task.priority)}${r.task.season ? `<span>🍂 ${esc(r.task.season)}</span>` : ''}</div></div>
+        <div class="meta">${G === 'priority' ? `<span>${esc(r.task.room)}</span>` : ''}<span>${esc(r.task.frequency)}</span>${r.task.effort_min ? `<span>⏱ ${r.task.effort_min} min</span>` : ''}${G === 'priority' ? '' : prioChip(r.task.priority)}${r.task.season ? `<span>🍂 ${esc(r.task.season)}</span>` : ''}</div></div>
         <div class="due">${statusChip(r.status)}<div class="muted">${r.task.frequency === 'Daily' ? 'every day' : fmtDate(r.next_due)}</div></div>
         <button class="more" data-act="date" aria-label="Done on another date">⋯</button></div>`).join('')}</details>`;
   }
@@ -137,7 +143,7 @@ async function toggleCatchup(id) {
 
 function render() {
   const today = localToday();
-  $('#today').textContent = fmtDate(today, { long: true }) + ' · v4' + (be.kind === 'mock' ? ' · local mock' : '');
+  $('#today').textContent = fmtDate(today, { long: true }) + ' · v5' + (be.kind === 'mock' ? ' · local mock' : '');
   $('#account').textContent = be.kind === 'mock' ? 'Mock data' : (be.user?.email || '');
   document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === state.tab));
   $('#tab-catchup').hidden = !state.db.catchup.length || today > addDays(CU_END, 14);
@@ -166,6 +172,7 @@ view.addEventListener('contextmenu', (e) => { if (e.target.closest('.item[data-i
 view.addEventListener('click', async (e) => {
   const b = e.target.closest('button'); if (!b) return;
   if (longPressed) { longPressed = false; return; }
+  if (b.dataset.group) { state.group = b.dataset.group; localStorage.setItem('chores.group', state.group); return render(); }
   if (b.dataset.week) { state.next = b.dataset.week === 'next'; return render(); }
   if (b.dataset.undo) return undoCompletion(b.dataset.undo);
   if (b.dataset.cu) return toggleCatchup(b.dataset.cu);
