@@ -1,6 +1,6 @@
 import { computeAll, computeTask, thisWeekend, weekEndFor, fmtDate, addDays, toDay, FREQUENCIES, SEASONS, PRIORITIES, WEEKDAYS,
-  nextWeekendSat, saturdayOnOrAfter, uniqueSupplies, currentAway } from './schedule.js?v=7';
-import { makeBackend } from './data.js?v=7';
+  nextWeekendSat, saturdayOnOrAfter, uniqueSupplies, currentAway } from './schedule.js?v=8';
+import { makeBackend } from './data.js?v=8';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -175,7 +175,7 @@ async function toggleCatchup(id) {
 
 function render() {
   const today = localToday();
-  $('#today').textContent = fmtDate(today, { long: true }) + ' · v7' + (be.kind === 'mock' ? ' · local mock' : '');
+  $('#today').textContent = fmtDate(today, { long: true }) + ' · v8' + (be.kind === 'mock' ? ' · local mock' : '');
   $('#account').textContent = '⚙ ' + (be.kind === 'mock' ? 'Mock data' : (be.user?.email || ''));
   document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === state.tab));
   $('#tab-catchup').hidden = !state.db.catchup.length || today > addDays(CU_END, 14);
@@ -316,7 +316,13 @@ function openEdit(t) {
       if (isNew) {
         row.sort_key = Math.max(0, ...db.tasks.map((x) => x.sort_key || 0)) + 1; row.source = 'app';
         await be.addTask(row);
-      } else await be.updateTask(t.id, row);
+      } else {
+        await be.updateTask(t.id, row);
+        // editing Last done replaces it: drop later ticks so the new date actually takes effect
+        if (row.last_done && row.last_done !== (t.last_done || null)) {
+          for (const c of db.completions.filter((c) => c.task_id === t.id && c.done_on > row.last_done)) await be.removeCompletion(c.id);
+        }
+      }
     } catch (ex) { return fail(ex.message); }
     d.close(); await refresh();
     if (isNew) toast(`Added “${row.name}”`);
