@@ -1,5 +1,5 @@
 // Offline app shell. Bump VERSION when you deploy changes.
-const VERSION = 'chores-v10';
+const VERSION = 'chores-v11';
 const SHELL = ['./', 'index.html', 'styles.css', 'config.js', 'manifest.webmanifest', 'src/app.js', 'src/data.js', 'src/schedule.js',
   'data/seed.json', 'icons/icon-192.png', 'icons/icon-512.png'];
 self.addEventListener('install', (e) => e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting())));

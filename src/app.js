@@ -1,6 +1,6 @@
 import { computeAll, computeTask, thisWeekend, weekEndFor, fmtDate, addDays, toDay, FREQUENCIES, SEASONS, PRIORITIES, WEEKDAYS,
-  nextWeekendSat, saturdayOnOrAfter, uniqueSupplies, currentAway, effectiveLast, fromDay, planDone, EFFORT_BUCKETS, effortBucket, byNextDue } from './schedule.js?v=10';
-import { makeBackend } from './data.js?v=10';
+  nextWeekendSat, saturdayOnOrAfter, uniqueSupplies, currentAway, effectiveLast, fromDay, planDone, EFFORT_BUCKETS, effortBucket, byNextDue } from './schedule.js?v=11';
+import { makeBackend } from './data.js?v=11';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -202,7 +202,7 @@ async function toggleCatchupNow(id) {
 
 function render() {
   const today = localToday();
-  $('#today').textContent = fmtDate(today, { long: true }) + ' · v10' + (be.kind === 'mock' ? ' · local mock' : '');
+  $('#today').textContent = fmtDate(today, { long: true }) + ' · v11' + (be.kind === 'mock' ? ' · local mock' : '');
   $('#account').textContent = '⚙ ' + (be.kind === 'mock' ? 'Mock data' : (be.user?.email || ''));
   document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === state.tab));
   $('#tab-catchup').hidden = !state.db.catchup.length || today > addDays(CU_END, 14);

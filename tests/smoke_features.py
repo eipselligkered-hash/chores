@@ -16,7 +16,7 @@ with sync_playwright() as p:
     pg.on("console", lambda m: m.type == "error" and errors.append(m.text)); pg.on("pageerror", lambda e: errors.append(str(e)))
     pg.on("dialog", lambda d: d.accept())
     pg.goto(BASE + "?today=2026-11-06"); pg.wait_for_selector(".cap")
-    ok("header shows v10", "v10" in pg.inner_text("#today"))
+    ok("header shows v11", "v11" in pg.inner_text("#today"))
     # supplies line
     ok("You'll need line present", pg.locator("#needs").count() == 1)
     ok("You'll need preview when collapsed", "Degreaser" in pg.inner_text("#needs summary"))
@@ -88,9 +88,9 @@ with sync_playwright() as p:
     # v10: By time grouping
     pg.click("[data-group=time]"); pg.wait_for_timeout(200)
     heads = pg.locator("details.room:not(.retired) > summary > span:first-child").all_inner_texts()
-    order = ["Quick (under 10 min)", "10–30 min", "30–60 min", "Over an hour", "No time set"]
-    got = [o for h in heads for o in order if h.startswith(o)]
-    ok(f"By time groups in order ({got})", got == [o for o in order if o in got] and len(got) >= 4)
+    order = ["Under 5 min", "Under 10 min", "10–30 min", "30–60 min", "Over an hour", "No time set"]
+    got = [o for h in heads for o in order if h.startswith(o + " ")]
+    ok(f"By time groups in order ({got})", got == [o for o in order if o in got] and got[:2] == order[:2] and len(got) >= 5)
     seg = pg.locator(".seg:has([data-group=time])").bounding_box()
     ok("group toggle fits at 390px", seg["x"] >= 0 and seg["x"] + seg["width"] <= 390 and pg.evaluate("document.documentElement.scrollWidth") <= 390)
     pg.evaluate("document.querySelector('#toast').hidden = true"); pg.screenshot(path=f"{OUT}/all_by_time.png")
