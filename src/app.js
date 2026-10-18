@@ -9,7 +9,7 @@ const localToday = () => params.get('today') || new Date().toLocaleDateString('e
 const CU_START = '2026-10-23', CU_END = '2026-10-27';
 
 const be = makeBackend();
-const state = { tab: params.get('tab') || 'weekend', next: params.get('week') === 'next', q: '', db: null, lastUndo: null };
+const state = { openRooms: new Set(), tab: params.get('tab') || 'weekend', next: params.get('week') === 'next', q: '', db: null, lastUndo: null };
 
 async function refresh() { state.db = await be.load(); render(); }
 const cap = () => state.db.settings?.cap_min || window.CHORES_CONFIG?.cap || 300;
@@ -95,13 +95,15 @@ function renderAll() {
     <div class="summary">${['Overdue', 'Due today', 'Due by Sunday', 'OK', 'Paused (winter)', 'Daily habit', 'No date'].filter((s) => counts[s]).map((s) => `<span class="chip s-${cls(s)}">${counts[s]} ${s}</span>`).join('')}</div>`;
   for (const [room, rs] of rooms) {
     const od = rs.filter((r) => r.status === 'Overdue').length, due = rs.filter((r) => r.status.startsWith('Due')).length;
-    h += `<details class="room" ${q || od || due ? 'open' : ''}><summary><span>${esc(room)} <small class="muted">(${rs.length})</small></span><span class="counts">${od ? `<span class="chip s-Overdue">${od} overdue</span>` : ''}${due ? `<span class="chip s-Due-today">${due} due</span>` : ''}</span></summary>
-      ${rs.map((r) => `<div class="item ${r.task.priority === 'Safety' ? 'safety' : ''}"><div class="body"><div class="name">${esc(r.task.name)}</div>
+    h += `<details class="room" data-room="${esc(room)}" ${q || od || due || state.openRooms.has(room) ? 'open' : ''}><summary><span>${esc(room)} <small class="muted">(${rs.length})</small></span><span class="counts">${od ? `<span class="chip s-Overdue">${od} overdue</span>` : ''}${due ? `<span class="chip s-Due-today">${due} due</span>` : ''}</span></summary>
+      ${rs.map((r) => `<div class="item ${r.task.priority === 'Safety' ? 'safety' : ''}" data-id="${r.task.id}">
+        <button class="tick" data-act="done" aria-label="Mark ${esc(r.task.name)} done today">✓</button><div class="body"><div class="name">${esc(r.task.name)}</div>
         <div class="meta"><span>${esc(r.task.frequency)}</span>${r.task.effort_min ? `<span>⏱ ${r.task.effort_min} min</span>` : ''}${prioChip(r.task.priority)}${r.task.season ? `<span>🍂 ${esc(r.task.season)}</span>` : ''}</div></div>
-        <div class="due">${statusChip(r.status)}<div class="muted">${r.task.frequency === 'Daily' ? 'every day' : fmtDate(r.next_due)}</div></div></div>`).join('')}</details>`;
+        <div class="due">${statusChip(r.status)}<div class="muted">${r.task.frequency === 'Daily' ? 'every day' : fmtDate(r.next_due)}</div></div>
+        <button class="more" data-act="date" aria-label="Done on another date">⋯</button></div>`).join('')}</details>`;
   }
   if (!rooms.size) h += `<div class="empty">No tasks match “${esc(state.q)}”.</div>`;
-  return h + `<p class="hint">Read-only for now – edit tasks in the workbook or ask the assistant.</p>`;
+  return h + `<p class="hint">Tap ✓ to mark done today, or ⋯ (long-press) to pick another date. To add or change a task, ask the assistant.</p>`;
 }
 
 function renderCatchup() {
@@ -140,6 +142,7 @@ function render() {
   document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === state.tab));
   $('#tab-catchup').hidden = !state.db.catchup.length || today > addDays(CU_END, 14);
   $('#view').innerHTML = state.tab === 'all' ? renderAll() : state.tab === 'catchup' ? renderCatchup() : renderWeekend();
+  document.querySelectorAll('details.room').forEach((d) => d.addEventListener('toggle', () => { d.open ? state.openRooms.add(d.dataset.room) : state.openRooms.delete(d.dataset.room); }));
   const q = $('#q'); if (q) { q.oninput = (e) => { state.q = e.target.value; const pos = e.target.selectionStart; render(); const n = $('#q'); n.focus(); n.setSelectionRange(pos, pos); }; }
 }
 
