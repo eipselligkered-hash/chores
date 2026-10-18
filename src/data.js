@@ -36,6 +36,12 @@ export class SupabaseBackend {
   async init() {
     const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
     this.sb = createClient(this.url, this.anonKey, { auth: { persistSession: true, detectSessionInUrl: true, flowType: 'pkce' } });
+    // also accept links that carry tokens in the #hash (e.g. a sign-in link made by the assistant)
+    const h = new URLSearchParams(location.hash.slice(1));
+    if (h.get('access_token') && h.get('refresh_token')) {
+      await this.sb.auth.setSession({ access_token: h.get('access_token'), refresh_token: h.get('refresh_token') });
+      history.replaceState(null, '', location.pathname + location.search);
+    }
     const { data } = await this.sb.auth.getSession();
     this.user = data.session?.user || null;
     this.sb.auth.onAuthStateChange((_e, s) => { const was = !!this.user; this.user = s?.user || null; if (was !== !!this.user) location.reload(); });

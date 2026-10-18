@@ -137,7 +137,7 @@ async function toggleCatchup(id) {
 
 function render() {
   const today = localToday();
-  $('#today').textContent = fmtDate(today, { long: true }) + ' · v3' + (be.kind === 'mock' ? ' · local mock' : '');
+  $('#today').textContent = fmtDate(today, { long: true }) + ' · v4' + (be.kind === 'mock' ? ' · local mock' : '');
   $('#account').textContent = be.kind === 'mock' ? 'Mock data' : (be.user?.email || '');
   document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === state.tab));
   $('#tab-catchup').hidden = !state.db.catchup.length || today > addDays(CU_END, 14);
