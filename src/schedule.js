@@ -50,6 +50,19 @@ export function effectiveLast(task, completions = []) {
   return e || null;
 }
 
+/** Ticking a task done on doneOn so that it actually takes effect (effective last = latest of all dates).
+ *  exists: there is already a tick on doneOn (don't add another). duplicate: exists and nothing later - nothing to do.
+ *  later: completions after doneOn, to remove. last_done: new typed Last done when the typed one is later than doneOn
+ *  (else undefined = leave it). replaces: the effective last done that doneOn replaces (null when doneOn is the latest). */
+export function planDone(task, completions, doneOn) {
+  const mine = completions.filter((c) => c.task_id === task.id);
+  const prev = effectiveLast(task, completions);
+  const replaces = prev != null && prev > toDay(doneOn) ? fromDay(prev) : null;
+  const exists = mine.some((c) => c.done_on === doneOn);
+  return { duplicate: exists && !replaces, exists, later: mine.filter((c) => c.done_on > doneOn),
+           last_done: task.last_done && task.last_done > doneOn ? doneOn : undefined, replaces };
+}
+
 /** Nearest target weekday (Saturday unless due_weekday overrides it), but never back onto/before Last done E. */
 function snap(task, S, E) {
   const tgt = task.due_weekday && WEEKDAYS.includes(task.due_weekday) ? WEEKDAYS.indexOf(task.due_weekday) + 1 : 7;

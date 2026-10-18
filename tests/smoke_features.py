@@ -16,7 +16,7 @@ with sync_playwright() as p:
     pg.on("console", lambda m: m.type == "error" and errors.append(m.text)); pg.on("pageerror", lambda e: errors.append(str(e)))
     pg.on("dialog", lambda d: d.accept())
     pg.goto(BASE + "?today=2026-11-06"); pg.wait_for_selector(".cap")
-    ok("header shows v8", "v8" in pg.inner_text("#today"))
+    ok("header shows v9", "v9" in pg.inner_text("#today"))
     # supplies line
     ok("You'll need line present", pg.locator("#needs").count() == 1)
     ok("You'll need preview when collapsed", "Degreaser" in pg.inner_text("#needs summary"))
@@ -85,6 +85,38 @@ with sync_playwright() as p:
     pg.fill("#q", ""); pg.wait_for_timeout(200)
     ok("Retired section lists it", pg.locator("details.retired", has_text="Clean grout").count() == 1)
     ok("still 123 active rows", pg.locator("details.room:not(.retired) .item").count() == 123)
+    # v9: an earlier date than the last done replaces it; repeated taps don't duplicate; edit shows the effective Last done
+    mock = lambda: pg.evaluate("JSON.parse(localStorage.getItem('chores.mock.v1'))")
+    iron_id = [t for t in mock()["tasks"] if t["name"] == "Ironing"][0]["id"]
+    iron_c = lambda: [c["done_on"] for c in mock()["completions"] if c["task_id"] == iron_id]
+    pg.fill("#q", "ironing"); pg.wait_for_timeout(200)
+    row = pg.locator("details.room .item[data-id]", has_text="Ironing").first
+    row.locator(".more").click(); pg.wait_for_selector("#sheet[open]")
+    ok("date sheet shows last done", "Last done Sat 17/10" in pg.inner_text("#sheet"))
+    pg.fill("#sheet-date", "2026-10-10")
+    ok("date sheet warns an earlier date replaces it", "replaces it" in pg.inner_text("#sheet-note"))
+    pg.evaluate("document.querySelector('#toast').hidden = true")
+    pg.click("#sheet-ok"); pg.wait_for_selector("#toast:not([hidden])")
+    ok("toast says what it replaced", "(was Sat 17/10)" in pg.inner_text("#toast"))
+    ok("earlier tick took effect (overdue now)", "Overdue" in row.inner_text())
+    row.locator(".name").tap(); pg.wait_for_selector("#task-sheet[open]")
+    ld = pg.inner_text("#task-sheet dl.facts dd:nth-of-type(2)"); ok(f"sheet Last done shows 10 Oct, not the replaced 17 Oct ({ld!r})", "Sat 10 Oct 2026" in ld and "17 Oct" not in ld)
+    pg.keyboard.press("Escape"); pg.wait_for_timeout(150)
+    pg.click("#undo"); pg.wait_for_timeout(300)
+    ok("undo restores the old Last done", [t for t in mock()["tasks"] if t["id"] == iron_id][0]["last_done"] == "2026-10-17" and iron_c() == [])
+    pg.evaluate("(() => { const b = document.querySelector('details.room .item[data-id] .tick'); b.click(); b.click(); b.click(); })()"); pg.wait_for_timeout(500)
+    ok(f"rapid repeated taps add one completion ({iron_c()})", iron_c() == ["2026-11-06"])
+    row.locator(".tick").tap(); pg.wait_for_timeout(300)
+    ok("tapping a ticked task again says already done", "already done" in pg.inner_text("#toast") and iron_c() == ["2026-11-06"])
+    row.locator(".name").tap(); pg.click("#ts-edit"); pg.wait_for_selector("#edit-sheet[open]")
+    ok("edit form shows the effective Last done (latest tick)", pg.input_value("#edit-form [name=last_done]") == "2026-11-06")
+    pg.fill("#edit-form [name=effort_min]", "25"); pg.click("#ed-save"); pg.wait_for_timeout(300)
+    ok("saving other fields leaves Last done/ticks alone", [t for t in mock()["tasks"] if t["id"] == iron_id][0]["last_done"] == "2026-10-17" and iron_c() == ["2026-11-06"])
+    row.locator(".name").tap(); pg.click("#ts-edit"); pg.wait_for_selector("#edit-sheet[open]")
+    pg.fill("#edit-form [name=last_done]", ""); pg.click("#ed-save"); pg.wait_for_timeout(300)
+    it = [t for t in mock()["tasks"] if t["id"] == iron_id][0]
+    ok("clearing Last done really clears it", it["last_done"] is None and iron_c() == [] and "No date" in row.inner_text())
+    pg.fill("#q", ""); pg.wait_for_timeout(200)
     # away mode
     pg.click("button[data-tab=weekend]"); pg.wait_for_selector(".cap"); pg.click("text=Next weekend"); pg.wait_for_timeout(200)
     nn = pg.locator(".item[data-id]").count()

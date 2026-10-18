@@ -146,6 +146,8 @@ export async function main(args = argv) {
     return 0;
   }
   if (cmd === 'done' || cmd === 'undo' || cmd === 'snooze' || cmd === 'unsnooze') {
+    if (date && !ISO.test(date)) { console.error('--date must be YYYY-MM-DD'); return 1; }
+    if (cmd === 'done' && date > today) { console.error(`--date ${date} is in the future (today is ${today})`); return 1; }
     const due = new Set(we.rows.map((r) => r.task.id)); let rc = 0;
     for (const q of rest) {
       const m = matchTask(q, db.tasks, due);
@@ -165,6 +167,9 @@ export async function main(args = argv) {
         console.log(`${dry ? '[dry-run] would ' : ''}${z ? `💤 snoozed ${t.room}: ${t.name} to ${fmtDate(z)}` : `unsnoozed ${t.room}: ${t.name}`} → next due ${fmtDate(after.next_due)}`); continue;
       }
       const d = date || today;
+      if (db.completions.some((c) => c.task_id === t.id && c.done_on === d)) { console.log(`- ${t.room}: ${t.name} is already marked done ${fmtDate(d)} (nothing added)`); continue; }
+      const last = computeAll([t], db.completions, today)[0].last_effective;
+      if (last && d < last) console.log(`! ${t.room}: ${t.name} was last done ${fmtDate(last)} – a tick on ${fmtDate(d)} won't change the next due (the app replaces it when ticked there, or edit Last done)`);
       if (!dry) { await store.addCompletion(t, d, null); db.completions.push({ task_id: t.id, done_on: d }); if (t.snooze_until) { await store.updateTask(t, { snooze_until: null }); t.snooze_until = null; } }
       const after = computeAll([dry ? { ...t, snooze_until: null } : t], [...db.completions, ...(dry ? [{ task_id: t.id, done_on: d }] : [])], today, { away })[0];
       console.log(`${dry ? '[dry-run] would mark' : '✓ marked'} ${t.room}: ${t.name} done ${fmtDate(d)} (${m.how}) → next due ${fmtDate(after.next_due)}`);
