@@ -186,5 +186,5 @@ $('#account').onclick = async () => {
     be.onChange(() => refresh());
     await refresh();
   } catch (err) { $('#view').innerHTML = `<div class="card">Couldn't load: ${esc(err.message)}</div>`; console.error(err); }
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((r) => r.update()).catch(() => {});
 })();
