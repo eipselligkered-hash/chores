@@ -16,7 +16,7 @@ with sync_playwright() as p:
     pg.on("console", lambda m: m.type == "error" and errors.append(m.text)); pg.on("pageerror", lambda e: errors.append(str(e)))
     pg.on("dialog", lambda d: d.accept())
     pg.goto(BASE + "?today=2026-11-06"); pg.wait_for_selector(".cap")
-    ok("header shows v13", "v13" in pg.inner_text("#today"))
+    ok("header shows v14", "v14" in pg.inner_text("#today"))
     # supplies line
     ok("You'll need line present", pg.locator("#needs").count() == 1)
     ok("You'll need preview when collapsed", "Degreaser" in pg.inner_text("#needs summary"))
@@ -107,6 +107,14 @@ with sync_playwright() as p:
     pg.click("[data-filter=todo]"); pg.wait_for_timeout(200)
     ok("By time works with the To do filter", pg.locator("details.room .item[data-id]").count() > 0 and pg.locator("details.room .chip.s-OK").count() == 0)
     pg.click("[data-filter=all]"); pg.click("[data-group=room]"); pg.wait_for_timeout(200)
+    # v14: inside every group, most urgent first (Overdue, Due today, Due by Sunday, OK, No date, Daily habit, snoozed/Paused)
+    rank_js = """() => { const R = {'Overdue': 0, 'Due today': 1, 'Due by Sunday': 2, 'OK': 3, 'No date': 4, 'Daily habit': 5, 'Paused (winter)': 6};
+      return [...document.querySelectorAll('details.room:not(.retired)')].every((d) => { const rk = [...d.querySelectorAll('.item[data-id]')]
+        .filter((i) => !i.querySelector('.chip.s-Done')).map((i) => i.querySelector('.snz') ? 6 : R[i.querySelector('.due .chip').textContent.trim()] ?? 4);
+        return rk.every((x, j) => !j || rk[j - 1] <= x); }); }"""
+    for g in ["room", "priority", "time"]:
+        pg.click(f"[data-group={g}]"); pg.wait_for_timeout(200)
+        ok(f"v14: {g} groups list tasks by status", pg.evaluate(rank_js))
     # v13: 'took __ min' in the tick toast -> logs minutes, re-estimates, Undo reverts both; sheet history shows + edits it
     mockdb = lambda: pg.evaluate("JSON.parse(localStorage.getItem('chores.mock.v1'))")
     pg.fill("#q", "descale kettle"); pg.wait_for_timeout(200)

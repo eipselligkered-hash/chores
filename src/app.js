@@ -1,6 +1,6 @@
 import { computeAll, computeTask, thisWeekend, weekEndFor, fmtDate, addDays, toDay, FREQUENCIES, SEASONS, PRIORITIES, WEEKDAYS,
-  nextWeekendSat, saturdayOnOrAfter, uniqueSupplies, currentAway, effectiveLast, fromDay, planDone, EFFORT_BUCKETS, effortBucket, byNextDue, loggedMinutes, effortFromLogs, validMinutes } from './schedule.js?v=13';
-import { makeBackend } from './data.js?v=13';
+  nextWeekendSat, saturdayOnOrAfter, uniqueSupplies, currentAway, effectiveLast, fromDay, planDone, EFFORT_BUCKETS, effortBucket, byNextDue, byStatus, loggedMinutes, effortFromLogs, validMinutes } from './schedule.js?v=14';
+import { makeBackend } from './data.js?v=14';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -222,7 +222,8 @@ function renderAll() {
   if (G === 'priority') for (const k of PRIO) rooms.set(k, []);
   if (G === 'time') for (const k of EFFORT_BUCKETS) rooms.set(k, []);
   const daily = (r) => (r.task.frequency === 'Daily' ? 1 : 0);   // 'every day' has no real due date: after the dated jobs
-  const list = G === 'room' ? rows : rows.slice().sort(G === 'time' ? (a, b) => daily(a) - daily(b) || byNextDue(a, b) : byNextDue);
+  // To do / All: most urgent first within each group (byStatus). Done tab keeps the old order (room: sort_key; others: next due).
+  const list = F !== 'done' ? rows.slice().sort(byStatus) : G === 'room' ? rows : rows.slice().sort(G === 'time' ? (a, b) => daily(a) - daily(b) || byNextDue(a, b) : byNextDue);
   for (const r of list) { if (!passF(r)) continue; if (q && !(`${r.task.room} ${r.task.name} ${r.task.priority}`.toLowerCase().includes(q))) continue; const k = keyOf(r); if (!rooms.has(k)) rooms.set(k, []); rooms.get(k).push(r); }
   for (const [k, v] of rooms) if (!v.length) rooms.delete(k);
   let h = `<div class="toolbar"><input class="search" type="search" placeholder="Search ${rows.length} tasks…" value="${esc(state.q)}" id="q" autocomplete="off">
@@ -282,7 +283,7 @@ async function toggleCatchupNow(id) {
 
 function render() {
   const today = localToday();
-  $('#today').textContent = fmtDate(today, { long: true }) + ' · v13' + (be.kind === 'mock' ? ' · local mock' : '') + (state.conn === 'updating' ? ' · updating…' : '');
+  $('#today').textContent = fmtDate(today, { long: true }) + ' · v14' + (be.kind === 'mock' ? ' · local mock' : '') + (state.conn === 'updating' ? ' · updating…' : '');
   $('#account').textContent = '⚙ ' + (be.kind === 'mock' ? 'Mock data' : (be.user?.email || ''));
   document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === state.tab));
   $('#tab-catchup').hidden = !state.db.catchup.length || today > addDays(CU_END, 14);

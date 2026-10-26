@@ -125,3 +125,9 @@ node scripts/assistant_cli/cli.mjs export chores.xlsx
 - Task sheet → Last done shows "Sat 17 Oct · 20 min"; tap **+ time / edit** to add or change minutes on a past tick.
 - CLI: `done <task> --min N`.
 - Needs `supabase/migrations/003_minutes.sql` (adds nullable `completions.minutes`, 0–600). Until it's applied the input is hidden and ticks work as before.
+
+## v14 – All tasks: most urgent first inside each group
+- **By room**, **By priority** and **By time** now list the tasks inside each group by status: Overdue → Due today → Due by Sunday →
+  OK → No date → Daily habit → snoozed (*Not this weekend*) / Paused (winter). Same status: earliest due date first, then the usual
+  order (`sort_key`). `byStatus` / `statusRank` in `src/schedule.js`; test `tests/status_order.test.js`.
+- Group order is unchanged, and so is the **Done** tab's order.

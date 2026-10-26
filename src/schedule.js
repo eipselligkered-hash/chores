@@ -165,6 +165,11 @@ export function effortBucket(min) {
 }
 /** Soonest next due first (overdue first), no date last, then workbook order. */
 export const byNextDue = (a, b) => (a.next_due || '9999').localeCompare(b.next_due || '9999') || (a.task.sort_key ?? 0) - (b.task.sort_key ?? 0);
+// v14: within an All tasks group, most urgent first: Overdue, Due today, Due by Sunday, OK, No date, Daily habit,
+// then snoozed ('Not this weekend') and Paused (winter) last; same rank = earliest next due, then sort_key.
+export const STATUS_RANK = { 'Overdue': 0, 'Due today': 1, 'Due by Sunday': 2, 'OK': 3, 'No date': 4, 'Daily habit': 5, 'Paused (winter)': 6 };
+export const statusRank = (r) => (r.snoozed_until ? 6 : STATUS_RANK[r.status] ?? 4);
+export const byStatus = (a, b) => statusRank(a) - statusRank(b) || byNextDue(a, b);
 
 /** 'Not this weekend': the Saturday after the coming/current weekend. */
 export const nextWeekendSat = (todayIso) => fromDay(toDay(weekEndFor(todayIso)) + 6);

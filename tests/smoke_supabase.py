@@ -66,7 +66,7 @@ with sync_playwright() as p:
     ok("wrong code: clear message", "wrong or has expired" in pg.inner_text(".login .err"))
     pg.fill("#code", "123456"); pg.click("#code-form button")
     pg.wait_for_selector(".cap", timeout=15000)
-    ok("right code signs in and loads the chores", "v13" in pg.inner_text("#today") and pg.locator(".item[data-id]").count() > 0)
+    ok("right code signs in and loads the chores", "v14" in pg.inner_text("#today") and pg.locator(".item[data-id]").count() > 0)
     pg.locator(".item[data-id] .tick").first.tap(); pg.wait_for_selector("#toast:not([hidden])")
     ok("before migration 003: tick works, no minutes input", "done" in pg.inner_text("#toast") and pg.locator("#took-min").count() == 0 and len(DB["completions"]) == 1)
     key = f"chores.cache.v1.{UID}"
